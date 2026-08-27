@@ -50,10 +50,13 @@
         input:focus, select:focus { outline: none; border-color: #9ab474; box-shadow: 0 0 5px rgba(154, 180, 116, 0.3); }
         .btn { display: block; width: 100%; margin-top: 15px; padding: 12px; background: #4CAF50; color: white; border: none; font-size: 16px; cursor: pointer; border-radius: 4px; font-weight: bold; }
         .btn:hover { background: #45a049; }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
         .btn-blue { background: #2196F3; }
         .btn-blue:hover { background: #0b7dda; }
+        .btn-blue:disabled { background: #ccc; }
         .btn-orange { background: #ff9800; }
         .btn-orange:hover { background: #e68a00; }
+        .btn-orange:disabled { background: #ccc; }
         .btn-secondary { background: #757575; padding: 8px 12px; font-size: 14px; width: auto; margin: 0; }
         .btn-secondary:hover { background: #616161; }
         hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
@@ -207,6 +210,7 @@
         let devicesDataCache = {};
         let selectedDeviceId = null;
         let checkingDeviceId = null;
+        let pongListenerHandle = null;
 
         // ========== PAGE NAVIGATION ==========
         function showPage(pageName) {
@@ -235,9 +239,10 @@
                 const isOnline = (info.status === 'online');
                 const statusText = isOnline ? '🟢 Online' : '🔴 Offline';
                 const statusColor = isOnline ? '#4CAF50' : '#f44336';
+                const isSelected = (deviceId === selectedDeviceId) ? 'selected' : '';
 
                 html += `
-                    <div class="device-card" onclick="selectDevice('${deviceId}')">
+                    <div class="device-card ${isSelected}" onclick="selectDevice('${deviceId}')">
                         <div class="device-name">${deviceId}</div>
                         <div class="device-info">
                             🌐 IP: ${info.ip || 'N/A'}<br>
@@ -346,40 +351,65 @@
             const pongRef = db.ref(`esp32/devices/${checkingDeviceId}/info/pong`);
             const statusRef = db.ref(`esp32/devices/${checkingDeviceId}/info/status`);
 
+            // ✅ FIX 1: Dòn dẹp listener cũ trước khi tạo listener mới
+            if (pongListenerHandle) {
+                pongRef.off('value', pongListenerHandle);
+            }
+
+            let timeoutId = null;
+            let pongReceived = false;
+
             // 1. Ghi mã ping lên Firebase
             pingRef.set(currentPing).then(() => {
                 // 2. Lắng nghe phản hồi (pong) từ ESP32
-                const pongListener = pongRef.on('value', (snapshot) => {
+                pongListenerHandle = pongRef.on('value', (snapshot) => {
                     const pongValue = snapshot.val();
                     if (pongValue === currentPing) {
+                        pongReceived = true;
                         // ESP32 ĐÃ TRẢ LỜI -> ONLINE
-                        statusRef.set('online');
-                        
-                        // Dọn dẹp listener & timeout
-                        pongRef.off('value', pongListener);
-                        clearTimeout(timeoutId);
-                        btnCheck.disabled = false;
-                        
-                        // Cập nhật danh sách
-                        renderDevicesList(devicesDataCache);
+                        statusRef.set('online').then(() => {
+                            // Dọn dẹp listener & timeout
+                            pongRef.off('value', pongListenerHandle);
+                            pongListenerHandle = null;
+                            if (timeoutId) clearTimeout(timeoutId);
+                            btnCheck.disabled = false;
+                            
+                            // ✅ FIX 2: Cập nhật cache và render danh sách ngay
+                            if (devicesDataCache[checkingDeviceId]) {
+                                devicesDataCache[checkingDeviceId].info.status = 'online';
+                            }
+                            renderDevicesList(devicesDataCache);
+                        });
                     }
                 });
 
                 // 3. Đặt timeout 3 giây, nếu không có phản hồi -> OFFLINE
-                const timeoutId = setTimeout(() => {
-                    statusRef.set('offline');
-
-                    // Dọn dẹp listener
-                    pongRef.off('value', pongListener);
-                    btnCheck.disabled = false;
-                    
-                    // Cập nhật danh sách
-                    renderDevicesList(devicesDataCache);
+                timeoutId = setTimeout(() => {
+                    if (!pongReceived) {
+                        // ✅ FIX 3: Chỉ ghi offline nếu chưa nhận pong
+                        statusRef.set('offline').then(() => {
+                            // Dọn dẹp listener
+                            pongRef.off('value', pongListenerHandle);
+                            pongListenerHandle = null;
+                            btnCheck.disabled = false;
+                            
+                            // ✅ FIX 2: Cập nhật cache và render danh sách ngay
+                            if (devicesDataCache[checkingDeviceId]) {
+                                devicesDataCache[checkingDeviceId].info.status = 'offline';
+                            }
+                            renderDevicesList(devicesDataCache);
+                        });
+                    }
                 }, 3000);
 
             }).catch(err => {
                 alert("Lỗi khi gửi lệnh ping: " + err.message);
                 btnCheck.disabled = false;
+                if (timeoutId) clearTimeout(timeoutId);
+                if (pongListenerHandle) {
+                    pongRef.off('value', pongListenerHandle);
+                    pongListenerHandle = null;
+                }
             });
         }
 
