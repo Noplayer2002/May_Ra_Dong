@@ -1,30 +1,3 @@
-Ý tưởng của bạn thực sự rất xuất sắc và mang tư duy của một hệ thống IoT chuyên
-nghiệp!
-
-Đúng vậy, thay vì Web phải chạy vòng lặp gửi N lệnh Ping cho N thiết bị (gọi là
-Unicast), chúng ta hoàn toàn có thể tạo 1 biến global_ping nằm ngoài danh sách
-thiết bị. Mọi ESP32 sẽ cùng lắng nghe biến này (gọi là Broadcast - Phát sóng).
-
-Mô hình tối ưu hóa bằng "Global Ping":
-
-1.  Web (Chỉ tốn 1 lần ghi): Ghi một mã thời gian Date.now() vào đường dẫn
-    esp32/global_command/ping.
-2.  ESP32 (Tự xử lý): Tất cả 20 con ESP32 đều đang lắng nghe đường dẫn trên. Khi
-    biến thay đổi, chúng tự động lấy mã đó và ghi vào đường dẫn riêng của nó:
-    esp32/devices/{id}/info/pong.
-3.  Web (Chờ và chốt sổ): Đợi 3 giây. Sau đó Web kiểm tra lại toàn bộ danh sách,
-    con nào có pong == global_ping thì cho Online, ngược lại cho Offline. Web sẽ
-    cập nhật trạng thái toàn bộ danh sách chỉ bằng 1 lệnh Ghi duy nhất (Batch
-    Update).
-
-Lợi ích: Giảm số lần Web chọc vào DB từ N lần xuống chỉ còn 2 lần (1 lần phát
-Ping, 1 lần cập nhật chốt trạng thái).
-
-Code giao diện Web đã tối ưu thuật toán (Copy đè bản cũ):
-
-(Lưu ý: Bạn nhớ đọc phần hướng dẫn sửa code trên ESP32 ở bên dưới để hệ thống
-này hoạt động nhé).
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -280,34 +253,3 @@ này hoạt động nhé).
     </script>
 </body>
 </html>
-
-YÊU CẦU QUAN TRỌNG: Cập nhật code C++ trên ESP32
-
-Vì Web đã đổi cách Ping, bạn bắt buộc phải sửa code trên ESP32 để nó biết lắng
-nghe cái biến global_ping mới này.
-
-Trong code C++ (Arduino IDE) của bạn, hãy sửa phần lắng nghe Firebase như sau:
-
-// 1. Khai báo lắng nghe đường dẫn GLOBAL
-String globalPingPath = "/esp32/global_command/ping"; 
-String myPongPath = "/esp32/devices/" + MAC_ADDRESS_CUA_ESP32 + "/info/pong";
-
-// 2. Trong hàm setup(), bắt đầu lắng nghe (Stream)
-if (Firebase.RTDB.beginStream(&stream, globalPingPath.c_str())) {
-    Serial.println("Đang lắng nghe Global Ping...");
-}
-
-// 3. Xử lý khi có Ping tới
-void streamCallback(FirebaseStream data) {
-    if (data.dataType() == "double" || data.dataType() == "int") {
-        // Lấy giá trị Ping từ Web
-        double currentPing = data.doubleData(); 
-        
-        // Trả lời (Pong) vào thư mục riêng của mình
-        Firebase.RTDB.setDoubleAsync(&fbdo, myPongPath.c_str(), currentPing);
-        Serial.println("Đã phản hồi Ping từ máy chủ!");
-    }
-}
-
-Kiến trúc này được gọi là Observer Pattern / Broadcast Pattern, rất được ưa
-chuộng trong các hệ thống Server-Client phân tán để giảm tải Data Base!
