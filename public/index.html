@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Welcome to Firebase Hosting</title>
+    <title>Trang Điều Khiển ESP32</title>
 
     <!-- update the version number as needed -->
     <script defer src="/__/firebase/12.18.0/firebase-app-compat.js"></script>
@@ -25,27 +25,27 @@
 
     <style media="screen">
       body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
-      #message { background: white; max-width: 360px; margin: 100px auto 16px; padding: 32px 24px; border-radius: 3px; }
-      #message h2 { color: #ffa100; font-weight: bold; font-size: 16px; margin: 0 0 8px; }
-      #message h1 { font-size: 22px; font-weight: 300; color: rgba(0,0,0,0.6); margin: 0 0 16px;}
-      #message p { line-height: 140%; margin: 16px 0 24px; font-size: 14px; }
-      #message a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; }
+      #message { background: white; max-width: 400px; margin: 100px auto 16px; padding: 32px 24px; border-radius: 8px; border-top: 5px solid #4CAF50;}
+      #message h2 { color: #4CAF50; font-weight: bold; font-size: 18px; margin: 0 0 8px; }
+      #message h1 { font-size: 24px; font-weight: bold; color: rgba(0,0,0,0.8); margin: 0 0 16px;}
+      #message p { line-height: 150%; margin: 16px 0 24px; font-size: 15px; color: #555;}
+      #message a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; font-weight: bold;}
       #message, #message a { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); }
-      #load { color: rgba(0,0,0,0.4); text-align: center; font-size: 13px; }
+      #load { color: rgba(0,0,0,0.4); text-align: center; font-size: 13px; font-weight: bold;}
       @media (max-width: 600px) {
         body, #message { margin-top: 0; background: white; box-shadow: none; }
-        body { border-top: 16px solid #ffa100; }
+        body { border-top: 16px solid #4CAF50; }
       }
     </style>
   </head>
   <body>
     <div id="message">
-      <h2>Welcome</h2>
-      <h1>Firebase Hosting Setup Complete</h1>
-      <p>You're seeing this because you've successfully setup Firebase Hosting. Now it's time to go build something extraordinary!</p>
-      <a target="_blank" href="https://firebase.google.com/docs/hosting/">Open Hosting Documentation</a>
+      <h2>🎉 Xin chào! (Bản cập nhật thử nghiệm)</h2>
+      <h1>Trang Web Đã Lên Sóng!</h1>
+      <p>Nếu bạn nhìn thấy những dòng chữ này, nghĩa là bạn đã chỉnh sửa file HTML và deploy lên Firebase Hosting thành công. Bây giờ bạn có thể bắt đầu xây dựng giao diện điều khiển ESP32 của riêng mình.</p>
+      <a target="_blank" href="https://firebase.google.com/docs/hosting/">Mở tài liệu Firebase</a>
     </div>
-    <p id="load">Firebase SDK Loading&hellip;</p>
+    <p id="load">Đang tải Firebase SDK&hellip;</p>
 
     <script>
       document.addEventListener('DOMContentLoaded', function() {
@@ -78,10 +78,10 @@
             'remoteConfig',
             'performance',
           ].filter(feature => typeof app[feature] === 'function');
-          loadEl.textContent = `Firebase SDK loaded with ${features.join(', ')}`;
+          loadEl.textContent = `Firebase SDK đã tải xong các module: ${features.join(', ')}`;
         } catch (e) {
           console.error(e);
-          loadEl.textContent = 'Error loading the Firebase SDK, check the console.';
+          loadEl.textContent = 'Lỗi tải Firebase SDK, hãy mở Console trên trình duyệt để xem chi tiết.';
         }
       });
     </script>
