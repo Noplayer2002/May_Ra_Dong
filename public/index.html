@@ -337,161 +337,97 @@
 
         // ========== CHECK CONNECTION FROM DEVICE SELECTION PAGE ==========
         function checkDeviceStatusFromList() {
-    if (!selectedDeviceId) {
-        alert("Vui lòng chọn thiết bị trước!");
-        return;
-    }
-
-    const deviceId = selectedDeviceId;
-    const btnCheck = document.getElementById('btn-check-device-status');
-
-    btnCheck.disabled = true;
-    btnCheck.textContent = "⏳ Đang kiểm tra...";
-
-    const currentPing = Date.now();
-
-    const deviceRef = db.ref(`esp32/devices/${deviceId}`);
-    const pingRef = deviceRef.child('info/ping');
-    const pongRef = deviceRef.child('info/pong');
-    const statusRef = deviceRef.child('info/status');
-
-    let timeoutId = null;
-    let finished = false;
-    let pongListener = null;
-
-    // Hàm kết thúc kiểm tra
-    function finishCheck(isOnline) {
-        if (finished) return;
-        finished = true;
-
-        if (timeoutId) {
-            clearTimeout(timeoutId);
-            timeoutId = null;
-        }
-
-        if (pongListener) {
-            pongRef.off('value', pongListener);
-            pongListener = null;
-        }
-
-        const newStatus = isOnline ? 'online' : 'offline';
-
-        console.log(
-            `[CHECK] ${deviceId} => ${newStatus}`
-        );
-
-        // Ghi status lên Firebase
-        statusRef.set(newStatus)
-            .then(() => {
-                console.log(
-                    `[FIREBASE] ${deviceId}/info/status = ${newStatus}`
-                );
-
-                // Cập nhật cache ngay
-                if (!devicesDataCache[deviceId]) {
-                    devicesDataCache[deviceId] = {};
-                }
-
-                if (!devicesDataCache[deviceId].info) {
-                    devicesDataCache[deviceId].info = {};
-                }
-
-                devicesDataCache[deviceId].info.status = newStatus;
-
-                // Render lại danh sách
-                renderDevicesList(devicesDataCache);
-
-                // Nếu đang xem thiết bị này thì cập nhật Config
-                if (selectedDeviceId === deviceId) {
-                    updateUIWithDevice(devicesDataCache[deviceId]);
-                }
-            })
-            .catch(err => {
-                console.error(
-                    `[FIREBASE ERROR] Không ghi được status ${newStatus}:`,
-                    err
-                );
-
-                alert(
-                    `❌ Không thể cập nhật trạng thái ${newStatus}: ${err.message}`
-                );
-            })
-            .finally(() => {
-                btnCheck.disabled = false;
-                btnCheck.textContent = "⚡ Kiểm tra Online/Offline";
-            });
-    }
-
-    // =====================================================
-    // 1. LISTEN PONG TRƯỚC KHI GỬI PING
-    // =====================================================
-
-    pongListener = (snapshot) => {
-        const pongValue = snapshot.val();
-
-        console.log(
-            `[PONG] ${deviceId}:`,
-            pongValue,
-            "expected:",
-            currentPing
-        );
-
-        if (pongValue === currentPing) {
-            // ESP32 đã phản hồi
-            finishCheck(true);
-        }
-    };
-
-    pongRef.on('value', pongListener);
-
-    // =====================================================
-    // 2. TIMEOUT 3 GIÂY
-    // =====================================================
-
-    timeoutId = setTimeout(() => {
-        console.log(
-            `[TIMEOUT] ${deviceId} không phản hồi trong 3 giây`
-        );
-
-        // Không nhận pong => OFFLINE
-        finishCheck(false);
-
-    }, 3000);
-
-    // =====================================================
-    // 3. GỬI PING
-    // =====================================================
-
-    console.log(
-        `[PING] ${deviceId}:`,
-        currentPing
-    );
-
-    pingRef.set(currentPing)
-        .catch(err => {
-            console.error("[PING ERROR]", err);
-
-            if (!finished) {
-                finished = true;
-
-                if (timeoutId) {
-                    clearTimeout(timeoutId);
-                }
-
-                if (pongListener) {
-                    pongRef.off('value', pongListener);
-                    pongListener = null;
-                }
-
-                btnCheck.disabled = false;
-                btnCheck.textContent = "⚡ Kiểm tra Online/Offline";
-
-                alert(
-                    "❌ Không gửi được ping: " + err.message
-                );
+            if (!selectedDeviceId) {
+                alert("Vui lòng chọn thiết bị trước!");
+                return;
             }
-        });
-}
+
+            checkingDeviceId = selectedDeviceId;
+            const btnCheck = document.getElementById('btn-check-device-status');
+            btnCheck.disabled = true;
+
+            const currentPing = Date.now();
+            const pingRef = db.ref(`esp32/devices/${checkingDeviceId}/info/ping`);
+            const pongRef = db.ref(`esp32/devices/${checkingDeviceId}/info/pong`);
+            const statusRef = db.ref(`esp32/devices/${checkingDeviceId}/info/status`);
+
+            // ✅ FIX 1: Dòn dẹp listener cũ trước khi tạo listener mới
+            if (pongListenerHandle) {
+                pongRef.off('value', pongListenerHandle);
+            }
+
+            let timeoutId = null;
+            let pongReceived = false;
+
+            // 1. Ghi mã ping lên Firebase
+            pingRef.set(currentPing).then(() => {
+                // 2. Lắng nghe phản hồi (pong) từ ESP32
+                pongListenerHandle = pongRef.on('value', (snapshot) => {
+                    const pongValue = snapshot.val();
+                    if (pongValue === currentPing) {
+                        pongReceived = true;
+                        // ESP32 ĐÃ TRẢ LỜI -> ONLINE
+                        statusRef.set('online').then(() => {
+                            // Dọn dẹp listener & timeout
+                            pongRef.off('value', pongListenerHandle);
+                            pongListenerHandle = null;
+                            if (timeoutId) clearTimeout(timeoutId);
+                            btnCheck.disabled = false;
+                            
+                            // ✅ FIX 2: Cập nhật cache và render danh sách ngay
+                            if (devicesDataCache[checkingDeviceId]) {
+                                devicesDataCache[checkingDeviceId].info.status = 'online';
+                            }
+                            renderDevicesList(devicesDataCache);
+                        });
+                    }
+                });
+
+                // 3. Đặt timeout 3 giây, nếu không có phản hồi -> OFFLINE
+                timeoutId = setTimeout(() => {
+                    if (!pongReceived) {
+                        // ✅ FIX 3: Chỉ ghi offline nếu chưa nhận pong
+                        statusRef.set('offline').then(() => {
+                            // Dọn dẹp listener
+                            pongRef.off('value', pongListenerHandle);
+                            pongListenerHandle = null;
+                            btnCheck.disabled = false;
+                            
+                            // ✅ FIX 2: Cập nhật cache và render danh sách ngay
+                            if (devicesDataCache[checkingDeviceId]) {
+                                devicesDataCache[checkingDeviceId].info.status = 'offline';
+                            }
+                            renderDevicesList(devicesDataCache);
+                        });
+                    }
+                }, 3000);
+
+            }).catch(err => {
+                alert("Lỗi khi gửi lệnh ping: " + err.message);
+                btnCheck.disabled = false;
+                if (timeoutId) clearTimeout(timeoutId);
+                if (pongListenerHandle) {
+                    pongRef.off('value', pongListenerHandle);
+                    pongListenerHandle = null;
+                }
+            });
+        }
+
+        function refreshCurrentDevice() {
+            if (selectedDeviceId && devicesDataCache[selectedDeviceId]) {
+                db.ref('esp32/devices/' + selectedDeviceId).once('value').then(snapshot => {
+                    const device = snapshot.val();
+                    if (device) {
+                        devicesDataCache[selectedDeviceId] = device;
+                        updateUIWithDevice(device);
+                        alert("✅ Đã làm mới thông tin thiết bị.");
+                    }
+                }).catch(err => {
+                    console.error(err);
+                    alert("❌ Lỗi: " + err.message);
+                });
+            }
+        }
 
         // ========== FORM SUBMISSIONS & REALTIME SYNC ==========
         document.addEventListener('DOMContentLoaded', function() {
