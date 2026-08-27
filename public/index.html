@@ -98,9 +98,8 @@
             
             <div id="devices-list"></div>
 
-            <!-- ACTION BAR: CHECK & REFRESH LIST -->
+            <!-- ACTION BAR: CHỈ CÒN NÚT LÀM MỚI Ở TRANG 1 -->
             <div class="action-bar">
-                <button class="btn btn-orange" id="btn-check-device-status" onclick="checkDeviceStatusFromList()">⚡ Kiểm tra Online/Offline</button>
                 <button class="btn btn-blue" onclick="loadESP32Devices()">🔄 Làm mới danh sách</button>
             </div>
         </div>
@@ -119,8 +118,9 @@
             <a onclick="switchTab(event, 'config')">Config</a>
         </div>
 
-        <!-- ACTION BAR: REFRESH ONLY -->
+        <!-- ACTION BAR: ĐƯA NÚT KIỂM TRA ONLINE SANG ĐÂY -->
         <div class="action-bar">
+            <button class="btn btn-orange" id="btn-check-device-status" onclick="checkDeviceStatusFromList()">⚡ Kiểm tra Online/Offline</button>
             <button class="btn btn-blue" onclick="refreshCurrentDevice()">🔄 Làm mới thông tin</button>
         </div>
 
@@ -179,7 +179,7 @@
 
                 <div class="info-item">
                     <span class="info-label">📡 Trạng thái mạng:</span>
-                    <span class="info-value status-disconnected" id="network-status">Chưa kiểm tra</span>
+                    <span class="info-value status-disconnected" id="network-status">Chưa kết nối</span>
                 </div>
 
                 <div class="info-item">
@@ -220,7 +220,7 @@
 
         function goBackToDeviceSelection() {
             showPage('device-selection-page');
-            selectedDeviceId = null;
+            selectedDeviceId = null; // Reset selection khi ra ngoài
         }
 
         // ========== DEVICE SELECTION PAGE ==========
@@ -335,7 +335,7 @@
             document.getElementById('server_port').value = '';
         }
 
-        // ========== CHECK CONNECTION FROM DEVICE SELECTION PAGE ==========
+        // ========== CHECK CONNECTION (FIXED) ==========
         function checkDeviceStatusFromList() {
             if (!selectedDeviceId) {
                 alert("Vui lòng chọn thiết bị trước!");
@@ -344,14 +344,14 @@
 
             checkingDeviceId = selectedDeviceId;
             const btnCheck = document.getElementById('btn-check-device-status');
-            btnCheck.disabled = true;
+            if (btnCheck) btnCheck.disabled = true;
 
             const currentPing = Date.now();
             const pingRef = db.ref(`esp32/devices/${checkingDeviceId}/info/ping`);
             const pongRef = db.ref(`esp32/devices/${checkingDeviceId}/info/pong`);
             const statusRef = db.ref(`esp32/devices/${checkingDeviceId}/info/status`);
 
-            // ✅ FIX 1: Dòn dẹp listener cũ trước khi tạo listener mới
+            // Dọn dẹp listener cũ
             if (pongListenerHandle) {
                 pongRef.off('value', pongListenerHandle);
             }
@@ -361,50 +361,38 @@
 
             // 1. Ghi mã ping lên Firebase
             pingRef.set(currentPing).then(() => {
-                // 2. Lắng nghe phản hồi (pong) từ ESP32
+                // 2. Lắng nghe phản hồi
                 pongListenerHandle = pongRef.on('value', (snapshot) => {
                     const pongValue = snapshot.val();
                     if (pongValue === currentPing) {
                         pongReceived = true;
-                        // ESP32 ĐÃ TRẢ LỜI -> ONLINE
                         statusRef.set('online').then(() => {
-                            // Dọn dẹp listener & timeout
                             pongRef.off('value', pongListenerHandle);
                             pongListenerHandle = null;
                             if (timeoutId) clearTimeout(timeoutId);
-                            btnCheck.disabled = false;
-                            
-                            // ✅ FIX 2: Cập nhật cache và render danh sách ngay
-                            if (devicesDataCache[checkingDeviceId]) {
-                                devicesDataCache[checkingDeviceId].info.status = 'online';
-                            }
-                            renderDevicesList(devicesDataCache);
+                            if (btnCheck) btnCheck.disabled = false;
+                            // Code UI update đã được bỏ vì Realtime Firebase bên dưới sẽ tự động gánh việc này!
                         });
                     }
                 });
 
-                // 3. Đặt timeout 3 giây, nếu không có phản hồi -> OFFLINE
+                // 3. Đợi 3 giây, không có kết quả -> Ghi Offline
                 timeoutId = setTimeout(() => {
                     if (!pongReceived) {
-                        // ✅ FIX 3: Chỉ ghi offline nếu chưa nhận pong
                         statusRef.set('offline').then(() => {
-                            // Dọn dẹp listener
                             pongRef.off('value', pongListenerHandle);
                             pongListenerHandle = null;
-                            btnCheck.disabled = false;
-                            
-                            // ✅ FIX 2: Cập nhật cache và render danh sách ngay
-                            if (devicesDataCache[checkingDeviceId]) {
-                                devicesDataCache[checkingDeviceId].info.status = 'offline';
-                            }
-                            renderDevicesList(devicesDataCache);
+                            if (btnCheck) btnCheck.disabled = false;
+                        }).catch(err => {
+                            console.error("Lỗi set offline:", err);
+                            if (btnCheck) btnCheck.disabled = false;
                         });
                     }
                 }, 3000);
 
             }).catch(err => {
                 alert("Lỗi khi gửi lệnh ping: " + err.message);
-                btnCheck.disabled = false;
+                if (btnCheck) btnCheck.disabled = false;
                 if (timeoutId) clearTimeout(timeoutId);
                 if (pongListenerHandle) {
                     pongRef.off('value', pongListenerHandle);
@@ -429,15 +417,21 @@
             }
         }
 
-        // ========== FORM SUBMISSIONS & REALTIME SYNC ==========
+        // ========== FORM SUBMISSIONS & REALTIME SYNC (FIXED) ==========
         document.addEventListener('DOMContentLoaded', function() {
-            // Lắng nghe realtime toàn bộ danh sách thiết bị
+            
+            // LẮNG NGHE REALTIME TOÀN BỘ DANH SÁCH THIẾT BỊ
             const devicesRef = db.ref('esp32/devices');
             devicesRef.on('value', (snapshot) => {
                 const data = snapshot.val();
                 devicesDataCache = data || {};
-                if (document.getElementById('device-selection-page').classList.contains('active')) {
-                    renderDevicesList(data);
+                
+                // 1. Luôn cập nhật danh sách ẩn (Trang 1)
+                renderDevicesList(data);
+                
+                // 2. FIX QUAN TRỌNG: Nếu đang ở Trang 2 của 1 thiết bị, bắt buộc cập nhật luôn UI Trang 2
+                if (selectedDeviceId && devicesDataCache[selectedDeviceId]) {
+                    updateUIWithDevice(devicesDataCache[selectedDeviceId]);
                 }
             });
 
