@@ -3,86 +3,453 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Trang Điều Khiển ESP32</title>
-
-    <!-- update the version number as needed -->
-    <script defer src="/__/firebase/12.18.0/firebase-app-compat.js"></script>
-    <!-- include only the Firebase features as you need -->
-    <script defer src="/__/firebase/12.18.0/firebase-auth-compat.js"></script>
-    <script defer src="/__/firebase/12.18.0/firebase-database-compat.js"></script>
-    <script defer src="/__/firebase/12.18.0/firebase-firestore-compat.js"></script>
-    <script defer src="/__/firebase/12.18.0/firebase-functions-compat.js"></script>
-    <script defer src="/__/firebase/12.18.0/firebase-messaging-compat.js"></script>
-    <script defer src="/__/firebase/12.18.0/firebase-storage-compat.js"></script>
-    <script defer src="/__/firebase/12.18.0/firebase-analytics-compat.js"></script>
-    <script defer src="/__/firebase/12.18.0/firebase-remote-config-compat.js"></script>
-    <script defer src="/__/firebase/12.18.0/firebase-performance-compat.js"></script>
-    <!-- 
-      initialize the SDK after all desired features are loaded, set useEmulator to false
-      to avoid connecting the SDK to running emulators.
-    -->
-    <script defer src="/__/firebase/init.js?useEmulator=true"></script>
+    <title>ESP32 Settings</title>
 
     <style media="screen">
-      body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
-      #message { background: white; max-width: 400px; margin: 100px auto 16px; padding: 32px 24px; border-radius: 8px; border-top: 5px solid #4CAF50;}
-      #message h2 { color: #4CAF50; font-weight: bold; font-size: 18px; margin: 0 0 8px; }
-      #message h1 { font-size: 24px; font-weight: bold; color: rgba(0,0,0,0.8); margin: 0 0 16px;}
-      #message p { line-height: 150%; margin: 16px 0 24px; font-size: 15px; color: #555;}
-      #message a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; font-weight: bold;}
-      #message, #message a { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); }
-      #load { color: rgba(0,0,0,0.4); text-align: center; font-size: 13px; font-weight: bold;}
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #f4f4f4;
+        margin: 0;
+      }
+
+      .top-bar {
+        background: #9ab474;
+        color: white;
+        padding: 15px 20px;
+        font-size: 20px;
+        font-weight: bold;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      }
+
+      .nav {
+        background: #e0e0e0;
+        display: flex;
+        border-bottom: 2px solid #9ab474;
+      }
+
+      .nav a {
+        padding: 12px 20px;
+        text-decoration: none;
+        color: #555;
+        font-weight: bold;
+        border-right: 1px solid #ccc;
+        transition: 0.3s;
+        cursor: pointer;
+        flex: 1;
+        text-align: center;
+      }
+
+      .nav a:hover {
+        background: #d5d5d5;
+      }
+
+      .nav a.active {
+        background: #fff;
+        color: #9ab474;
+        border-top: 3px solid #9ab474;
+        border-bottom: 2px solid #fff;
+        margin-bottom: -2px;
+      }
+
+      .container {
+        max-width: 600px;
+        margin: 20px auto;
+        background: #fff;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        padding: 20px;
+      }
+
+      .tab-content {
+        display: none;
+      }
+
+      .tab-content.active {
+        display: block;
+      }
+
+      h2 {
+        color: #555;
+        margin-top: 0;
+        margin-bottom: 20px;
+      }
+
+      h3 {
+        color: #555;
+        margin-top: 15px;
+        margin-bottom: 10px;
+        font-size: 16px;
+      }
+
+      .row {
+        display: flex;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid #eee;
+      }
+
+      .row:last-child {
+        border-bottom: none;
+      }
+
+      .label {
+        width: 140px;
+        font-weight: bold;
+        color: #555;
+      }
+
+      .input-box {
+        flex: 1;
+      }
+
+      input[type='text'],
+      input[type='number'],
+      input[type='password'] {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        box-sizing: border-box;
+        font-size: 14px;
+      }
+
+      input:focus {
+        outline: none;
+        border-color: #9ab474;
+        box-shadow: 0 0 5px rgba(154, 180, 116, 0.3);
+      }
+
+      .btn {
+        display: block;
+        width: 100%;
+        margin-top: 15px;
+        padding: 12px;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        font-size: 16px;
+        cursor: pointer;
+        border-radius: 4px;
+        font-weight: bold;
+        transition: 0.3s;
+      }
+
+      .btn:hover {
+        background: #45a049;
+      }
+
+      .btn-blue {
+        background: #2196F3;
+      }
+
+      .btn-blue:hover {
+        background: #0b7dda;
+      }
+
+      .btn-wifi {
+        background: #f9f9f9;
+        color: #333;
+        border: 1px solid #ddd;
+        padding: 10px;
+        margin-bottom: 5px;
+        text-align: left;
+        font-weight: normal;
+        width: 100%;
+      }
+
+      .btn-wifi:hover {
+        background: #efefef;
+      }
+
+      .wifi-list {
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #eee;
+        padding: 10px;
+        margin-bottom: 20px;
+        border-radius: 3px;
+      }
+
+      .no-networks {
+        text-align: center;
+        color: #999;
+        padding: 20px 0;
+      }
+
+      hr {
+        border: 0;
+        border-top: 1px solid #eee;
+        margin: 20px 0;
+      }
+
+      .info-item {
+        padding: 12px 0;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .info-item:last-child {
+        border-bottom: none;
+      }
+
+      .info-label {
+        font-weight: bold;
+        color: #555;
+      }
+
+      .info-value {
+        color: #333;
+        font-family: 'Courier New', monospace;
+        word-break: break-all;
+      }
+
+      .status-connected {
+        color: #4CAF50;
+        font-weight: bold;
+      }
+
+      .status-disconnected {
+        color: #f44336;
+        font-weight: bold;
+      }
+
+      .form-group {
+        margin-bottom: 15px;
+      }
+
       @media (max-width: 600px) {
-        body, #message { margin-top: 0; background: white; box-shadow: none; }
-        body { border-top: 16px solid #4CAF50; }
+        .container {
+          margin: 10px;
+          padding: 15px;
+        }
+
+        .nav {
+          flex-direction: column;
+        }
+
+        .nav a {
+          border-right: none;
+          border-bottom: 1px solid #ccc;
+        }
+
+        .row {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .label {
+          width: 100%;
+          margin-bottom: 5px;
+        }
+
+        .input-box {
+          width: 100%;
+        }
       }
     </style>
   </head>
   <body>
-    <div id="message">
-      <h2>🎉 Xin chào! (Bản cập nhật thử nghiệm)</h2>
-      <h1>Trang Web Đã Lên Sóng!</h1>
-      <p>Nếu bạn nhìn thấy những dòng chữ này, nghĩa là bạn đã chỉnh sửa file HTML và deploy lên Firebase Hosting thành công. Bây giờ bạn có thể bắt đầu xây dựng giao diện điều khiển ESP32 của riêng mình.</p>
-      <a target="_blank" href="https://firebase.google.com/docs/hosting/">Mở tài liệu Firebase</a>
+    <div class="top-bar">⚙️ ESP32 Settings</div>
+    
+    <div class="nav">
+      <a class="active" onclick="switchTab('wifi')">Wi-Fi</a>
+      <a onclick="switchTab('tcp')">TCP Client</a>
+      <a onclick="switchTab('config')">Config</a>
     </div>
-    <p id="load">Đang tải Firebase SDK&hellip;</p>
+
+    <div class="container">
+      <!-- TAB 1: WI-FI SETTINGS -->
+      <div id="wifi" class="tab-content active">
+        <h2>Kết nối mạng Wi-Fi</h2>
+        
+        <form action="/wifi" method="GET" style="margin-bottom: 20px;">
+          <input type="hidden" name="scan" value="1">
+          <button type="submit" class="btn btn-blue">📡 Quét tìm mạng xung quanh</button>
+        </form>
+
+        <hr>
+
+        <div id="wifi-list-container" style="display: none;">
+          <h3>Danh sách Wi-Fi tìm thấy:</h3>
+          <div class="wifi-list" id="wifi-list">
+            <p class="no-networks">Đang tìm kiếm mạng...</p>
+          </div>
+        </div>
+
+        <form action="/connect" method="POST">
+          <div class="form-group">
+            <div class="row">
+              <div class="label">SSID</div>
+              <div class="input-box">
+                <input type="text" id="ssid" name="ssid" placeholder="Tên mạng Wi-Fi" required>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="row">
+              <div class="label">Password</div>
+              <div class="input-box">
+                <input type="password" name="pass" placeholder="Mật khẩu">
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn">💾 Lưu & Khởi Động Lại</button>
+        </form>
+      </div>
+
+      <!-- TAB 2: TCP CLIENT SETTINGS -->
+      <div id="tcp" class="tab-content">
+        <h2>Socket Settings</h2>
+        
+        <form action="/tcp_save" method="POST">
+          <div class="form-group">
+            <div class="row">
+              <div class="label">Server</div>
+              <div class="input-box">
+                <input type="text" id="server_ip" name="server_ip" placeholder="192.168.1.100" required>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="row">
+              <div class="label">Server Port</div>
+              <div class="input-box">
+                <input type="number" name="server_port" min="1" max="65535" placeholder="8080" required>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="row">
+              <div class="label">Local Port</div>
+              <div class="input-box">
+                <input type="number" name="local_port" min="1" max="65535" placeholder="5000">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="row">
+              <div class="label">Buffer Size</div>
+              <div class="input-box">
+                <input type="number" name="buffer_size" min="256" placeholder="1024">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="row">
+              <div class="label">Keep Alive(s)</div>
+              <div class="input-box">
+                <input type="number" name="keep_alive" min="0" placeholder="60">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="row">
+              <div class="label">Timeout(s)</div>
+              <div class="input-box">
+                <input type="number" name="timeout" min="1" placeholder="30">
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn">💾 Save Settings</button>
+        </form>
+      </div>
+
+      <!-- TAB 3: SYSTEM INFO -->
+      <div id="config" class="tab-content">
+        <h2>Thông tin hệ thống</h2>
+        
+        <div class="info-item">
+          <span class="info-label">📡 Trạng thái mạng:</span>
+          <span class="info-value status-disconnected" id="network-status">Chưa kết nối</span>
+        </div>
+
+        <div class="info-item">
+          <span class="info-label">🌐 IP Address:</span>
+          <span class="info-value" id="ip-address">N/A</span>
+        </div>
+
+        <div class="info-item">
+          <span class="info-label">🔗 MAC Address:</span>
+          <span class="info-value" id="mac-address">N/A</span>
+        </div>
+
+        <div class="info-item">
+          <span class="info-label">📊 SSID:</span>
+          <span class="info-value" id="ssid-info">N/A</span>
+        </div>
+
+        <div class="info-item">
+          <span class="info-label">📶 Signal Strength:</span>
+          <span class="info-value" id="signal-strength">N/A</span>
+        </div>
+
+        <hr>
+
+        <button class="btn btn-blue" onclick="location.reload()">🔄 Làm mới thông tin</button>
+      </div>
+    </div>
 
     <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        const loadEl = document.querySelector('#load');
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-        // // The Firebase SDK is initialized and available here!
-        //
-        // firebase.auth().onAuthStateChanged(user => { });
-        // firebase.database().ref('/path/to/ref').on('value', snapshot => { });
-        // firebase.firestore().doc('/foo/bar').get().then(() => { });
-        // firebase.functions().httpsCallable('yourFunction')().then(() => { });
-        // firebase.messaging().requestPermission().then(() => { });
-        // firebase.storage().ref('/path/to/ref').getDownloadURL().then(() => { });
-        // firebase.analytics(); // call to activate
-        // firebase.analytics().logEvent('tutorial_completed');
-        // firebase.performance(); // call to activate
-        //
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
+      // Tab switching function
+      function switchTab(tabName) {
+        // Hide all tabs
+        const tabs = document.querySelectorAll('.tab-content');
+        tabs.forEach(tab => tab.classList.remove('active'));
 
-        try {
-          let app = firebase.app();
-          let features = [
-            'auth', 
-            'database', 
-            'firestore',
-            'functions',
-            'messaging', 
-            'storage', 
-            'analytics', 
-            'remoteConfig',
-            'performance',
-          ].filter(feature => typeof app[feature] === 'function');
-          loadEl.textContent = `Firebase SDK đã tải xong các module: ${features.join(', ')}`;
-        } catch (e) {
-          console.error(e);
-          loadEl.textContent = 'Lỗi tải Firebase SDK, hãy mở Console trên trình duyệt để xem chi tiết.';
-        }
+        // Remove active class from all nav links
+        const navLinks = document.querySelectorAll('.nav a');
+        navLinks.forEach(link => link.classList.remove('active'));
+
+        // Show selected tab
+        document.getElementById(tabName).classList.add('active');
+
+        // Add active class to clicked nav link
+        event.target.classList.add('active');
+      }
+
+      // Set SSID from Wi-Fi list
+      function setSSID(ssidName) {
+        document.getElementById('ssid').value = ssidName;
+      }
+
+      // Load Wi-Fi list (simulate API call)
+      function loadWiFiList() {
+        // This would normally call the ESP32 /wifi endpoint
+        // For now, it's a placeholder for the form submission
+        console.log('Wi-Fi scan initiated');
+      }
+
+      // Initialize on page load
+      document.addEventListener('DOMContentLoaded', function() {
+        console.log('ESP32 Settings Dashboard loaded');
+        
+        // You can add code here to fetch system info from ESP32
+        // For example: fetch('/api/status').then(...)
+      });
+
+      // Handle form submissions
+      document.querySelectorAll('form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+          // Optional: Add validation or loading indicator
+          console.log('Form submitted:', this.action);
+        });
       });
     </script>
   </body>
