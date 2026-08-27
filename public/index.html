@@ -9,10 +9,9 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
 
-    <!-- 2. CẤU HÌNH FIREBASE (RẤT QUAN TRỌNG) -->
+    <!-- 2. CẤU HÌNH FIREBASE -->
     <script>
         const firebaseConfig = {
-            // ĐIỀN THÔNG TIN FIREBASE CỦA BẠN VÀO ĐÂY
             apiKey: "AIzaSyDKi7eC8WD7fi_lu2Lm9FxUwMBIPd23bcw",
             authDomain: "may-ra-dong.firebaseapp.com",
             databaseURL: "https://may-ra-dong-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -22,12 +21,11 @@
             appId: "1:777662906578:web:7b52d7ed61fb868b112d0b",
             measurementId: "G-F61WGFMGQ6"
         };
-        // Khởi tạo Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
     </script>
 
-    <!-- 3. CSS GIAO DIỆN CỦA BẠN (GIỮ NGUYÊN) -->
+    <!-- 3. CSS GIAO DIỆN -->
     <style media="screen">
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f4f4; margin: 0; }
@@ -40,21 +38,16 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         h2 { color: #555; margin-top: 0; margin-bottom: 20px; }
-        h3 { color: #555; margin-top: 15px; margin-bottom: 10px; font-size: 16px; }
         .row { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
         .row:last-child { border-bottom: none; }
         .label { width: 140px; font-weight: bold; color: #555; }
         .input-box { flex: 1; }
-        input[type='text'], input[type='number'], input[type='password'] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 3px; box-sizing: border-box; font-size: 14px; }
-        input:focus { outline: none; border-color: #9ab474; box-shadow: 0 0 5px rgba(154, 180, 116, 0.3); }
+        input[type='text'], input[type='number'], input[type='password'], select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 3px; font-size: 14px; }
+        input:focus, select:focus { outline: none; border-color: #9ab474; box-shadow: 0 0 5px rgba(154, 180, 116, 0.3); }
         .btn { display: block; width: 100%; margin-top: 15px; padding: 12px; background: #4CAF50; color: white; border: none; font-size: 16px; cursor: pointer; border-radius: 4px; font-weight: bold; transition: 0.3s; }
         .btn:hover { background: #45a049; }
         .btn-blue { background: #2196F3; }
         .btn-blue:hover { background: #0b7dda; }
-        .btn-wifi { background: #f9f9f9; color: #333; border: 1px solid #ddd; padding: 10px; margin-bottom: 5px; text-align: left; font-weight: normal; width: 100%; }
-        .btn-wifi:hover { background: #efefef; }
-        .wifi-list { max-height: 200px; overflow-y: auto; border: 1px solid #eee; padding: 10px; margin-bottom: 20px; border-radius: 3px; }
-        .no-networks { text-align: center; color: #999; padding: 20px 0; }
         hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
         .info-item { padding: 12px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
         .info-item:last-child { border-bottom: none; }
@@ -86,20 +79,6 @@
         <!-- TAB 1: WI-FI SETTINGS -->
         <div id="wifi" class="tab-content active">
             <h2>Kết nối mạng Wi-Fi</h2>
-            
-            <form id="wifi-scan-form" style="margin-bottom: 20px;">
-                <button type="submit" class="btn btn-blue">📡 Quét tìm mạng xung quanh</button>
-            </form>
-
-            <hr>
-
-            <div id="wifi-list-container" style="display: none;">
-                <h3>Danh sách Wi-Fi tìm thấy:</h3>
-                <div class="wifi-list" id="wifi-list">
-                    <p class="no-networks">Đang tìm kiếm mạng...</p>
-                </div>
-            </div>
-
             <form id="wifi-connect-form">
                 <div class="form-group">
                     <div class="row">
@@ -109,7 +88,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="form-group">
                     <div class="row">
                         <div class="label">Password</div>
@@ -118,15 +96,13 @@
                         </div>
                     </div>
                 </div>
-
-                <button type="submit" class="btn">💾 Lưu & Khởi Động Lại</button>
+                <button type="submit" class="btn">💾 Lưu cài đặt Wi-Fi</button>
             </form>
         </div>
 
         <!-- TAB 2: TCP CLIENT SETTINGS -->
         <div id="tcp" class="tab-content">
             <h2>Socket Settings</h2>
-            
             <form id="tcp-form">
                 <div class="form-group">
                     <div class="row">
@@ -136,7 +112,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="form-group">
                     <div class="row">
                         <div class="label">Server Port</div>
@@ -145,54 +120,30 @@
                         </div>
                     </div>
                 </div>
-
-                <div class="form-group">
-                    <div class="row">
-                        <div class="label">Local Port</div>
-                        <div class="input-box">
-                            <input type="number" id="local_port" name="local_port" min="1" max="65535" placeholder="5000">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <div class="row">
-                        <div class="label">Buffer Size</div>
-                        <div class="input-box">
-                            <input type="number" id="buffer_size" name="buffer_size" min="256" placeholder="1024">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <div class="row">
-                        <div class="label">Keep Alive(s)</div>
-                        <div class="input-box">
-                            <input type="number" id="keep_alive" name="keep_alive" min="0" placeholder="60">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <div class="row">
-                        <div class="label">Timeout(s)</div>
-                        <div class="input-box">
-                            <input type="number" id="timeout" name="timeout" min="1" placeholder="30">
-                        </div>
-                    </div>
-                </div>
-
                 <button type="submit" class="btn">💾 Save Settings</button>
             </form>
         </div>
 
-        <!-- TAB 3: SYSTEM INFO -->
+        <!-- TAB 3: SYSTEM INFO (HIỂN THỊ DỮ LIỆU FIREBASE) -->
         <div id="config" class="tab-content">
             <h2>Thông tin hệ thống</h2>
             
+            <div class="form-group">
+                <div class="row">
+                    <div class="label">Chọn thiết bị:</div>
+                    <div class="input-box">
+                        <select id="device-select">
+                            <option value="">-- Đang tải danh sách ESP32 --</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <hr>
+
             <div class="info-item">
                 <span class="info-label">📡 Trạng thái mạng:</span>
-                <span class="info-value status-disconnected" id="network-status">Chưa kết nối</span>
+                <span class="info-value status-disconnected" id="network-status">Đang tải...</span>
             </div>
 
             <div class="info-item">
@@ -210,19 +161,16 @@
                 <span class="info-value" id="ssid-info">N/A</span>
             </div>
 
-            <div class="info-item">
-                <span class="info-label">📶 Signal Strength:</span>
-                <span class="info-value" id="signal-strength">N/A</span>
-            </div>
-
             <hr>
 
-            <button class="btn btn-blue" onclick="location.reload()">🔄 Làm mới thông tin</button>
+            <button class="btn btn-blue" onclick="loadESP32Devices()">🔄 Làm mới danh sách</button>
         </div>
     </div>
 
-    <!-- 4. LOGIC JAVASCRIPT GỘP CHUNG -->
+    <!-- 4. LOGIC JAVASCRIPT ĐỌC VÀ HIỂN THỊ DỮ LIỆU -->
     <script>
+        let devicesDataCache = {};
+
         // Hàm chuyển Tab
         function switchTab(event, tabName) {
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
@@ -231,42 +179,100 @@
             event.target.classList.add('active');
         }
 
+        // THUẬT TOÁN ĐỌC DỮ LIỆU TỪ FIREBASE THEO THỜI GIAN THỰC (.on)
+        function listenToESP32Devices() {
+            const devicesRef = db.ref('esp32/devices');
+
+            devicesRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                const selectEl = document.getElementById('device-select');
+
+                if (!data) {
+                    selectEl.innerHTML = '<option value="">Chưa có ESP32 nào khai báo</option>';
+                    resetUIInfo();
+                    return;
+                }
+
+                devicesDataCache = data;
+                const currentSelected = selectEl.value;
+                selectEl.innerHTML = '';
+
+                // Thêm các ESP32 vào danh sách thả xuống
+                Object.keys(data).forEach((deviceId) => {
+                    const dev = data[deviceId];
+                    const option = document.createElement('option');
+                    option.value = deviceId;
+                    option.textContent = `${deviceId} (${dev.ip || 'No IP'})`;
+                    selectEl.appendChild(option);
+                });
+
+                // Giữ lại thiết bị đang chọn hoặc chọn thiết bị đầu tiên
+                if (currentSelected && data[currentSelected]) {
+                    selectEl.value = currentSelected;
+                    updateUIWithDevice(data[currentSelected]);
+                } else {
+                    const firstDeviceId = Object.keys(data)[0];
+                    selectEl.value = firstDeviceId;
+                    updateUIWithDevice(data[firstDeviceId]);
+                }
+            }, (error) => {
+                console.error("Lỗi đọc Firebase:", error);
+            });
+        }
+
+        // Cập nhật giao diện khi chọn thiết bị
+        function updateUIWithDevice(device) {
+            if (!device) {
+                resetUIInfo();
+                return;
+            }
+
+            const statusEl = document.getElementById('network-status');
+            const isOnline = device.status === 'online';
+
+            statusEl.textContent = isOnline ? '🟢 Online' : '🔴 Offline';
+            statusEl.className = 'info-value ' + (isOnline ? 'status-connected' : 'status-disconnected');
+
+            document.getElementById('ip-address').textContent = device.ip || 'N/A';
+            document.getElementById('mac-address').textContent = device.mac || 'N/A';
+            document.getElementById('ssid-info').textContent = device.ssid || 'N/A';
+        }
+
+        function resetUIInfo() {
+            document.getElementById('network-status').textContent = 'Chưa kết nối';
+            document.getElementById('network-status').className = 'info-value status-disconnected';
+            document.getElementById('ip-address').textContent = 'N/A';
+            document.getElementById('mac-address').textContent = 'N/A';
+            document.getElementById('ssid-info').textContent = 'N/A';
+        }
+
+        // Khởi tạo các sự kiện khi DOM sẵn sàng
         document.addEventListener('DOMContentLoaded', function() {
-            // Lắng nghe sự kiện lưu TCP Form
+            // Lắng nghe dữ liệu thiết bị từ Firebase
+            listenToESP32Devices();
+
+            // Lắng nghe sự kiện người dùng chọn thiết bị khác trên menu drop-down
+            document.getElementById('device-select').addEventListener('change', function(e) {
+                const selectedId = e.target.value;
+                if (devicesDataCache[selectedId]) {
+                    updateUIWithDevice(devicesDataCache[selectedId]);
+                }
+            });
+
+            // Lắng nghe submit TCP Form
             const tcpForm = document.getElementById('tcp-form');
             if (tcpForm) {
                 tcpForm.addEventListener('submit', function(e) {
-                    e.preventDefault(); // Chặn reload trang
-
-                    // Lấy giá trị, nếu rỗng thì cho về mặc định (tránh lỗi null)
-                    const serverIp = document.getElementById('server_ip').value;
-                    const serverPort = parseInt(document.getElementById('server_port').value) || 8080;
-                    const localPort = parseInt(document.getElementById('local_port').value) || 5000;
-                    const bufferSize = parseInt(document.getElementById('buffer_size').value) || 1024;
-                    const keepAlive = parseInt(document.getElementById('keep_alive').value) || 60;
-                    const timeout = parseInt(document.getElementById('timeout').value) || 30;
-
-                    // Chuẩn bị cục dữ liệu JSON
+                    e.preventDefault();
                     const tcpData = {
-                        server_ip: serverIp,
-                        server_port: serverPort,
-                        local_port: localPort,
-                        buffer_size: bufferSize,
-                        keep_alive: keepAlive,
-                        timeout: timeout,
+                        server_ip: document.getElementById('server_ip').value,
+                        server_port: parseInt(document.getElementById('server_port').value) || 8080,
                         updated_at: new Date().toISOString()
                     };
 
-                    // Gửi dữ liệu lên Firebase
-                    console.log("Đang gửi dữ liệu lên Firebase...", tcpData);
                     db.ref('esp32/settings/tcp').set(tcpData)
-                        .then(() => {
-                            alert("✅ Đã lưu cài đặt TCP lên Firebase thành công!");
-                        })
-                        .catch((error) => {
-                            alert("❌ Lỗi khi lưu Firebase: " + error.message);
-                            console.error(error);
-                        });
+                        .then(() => alert("✅ Đã lưu cài đặt TCP!"))
+                        .catch((error) => alert("❌ Lỗi: " + error.message));
                 });
             }
         });
