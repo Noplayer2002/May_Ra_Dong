@@ -1,6 +1,55 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <!-- Gọi Firebase SDK (chỉ cần gọi nếu bạn chưa nhúng ở trên thẻ <head>) -->
+    <script defer src="/__/firebase/10.8.1/firebase-app-compat.js"></script>
+    <script defer src="/__/firebase/10.8.1/firebase-database-compat.js"></script>
+    <script defer src="/__/firebase/init.js"></script>
+
+    <script defer>
+      // Hàm chuyển Tab (Giữ nguyên của bạn)
+      function switchTab(tabName) {
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.nav a').forEach(link => link.classList.remove('active'));
+        document.getElementById(tabName).classList.add('active');
+        event.target.classList.add('active');
+      }
+
+      window.onload = function() {
+        // 1. Kết nối Database
+        const db = firebase.database();
+        const settingsRef = db.ref('esp32/settings'); // Tạo ngăn kéo chứa cài đặt
+
+        // 2. Bắt sự kiện khi bấm nút "Save Settings" của tab TCP
+        const tcpForm = document.querySelector('form[action="/tcp_save"]');
+        
+        tcpForm.addEventListener('submit', function(e) {
+          e.preventDefault(); // Chặn hành động tải lại trang mặc định của HTML
+
+          // Lấy dữ liệu từ các ô nhập liệu
+          const tcpData = {
+            server_ip: document.getElementById('server_ip').value,
+            server_port: document.querySelector('input[name="server_port"]').value,
+            local_port: document.querySelector('input[name="local_port"]').value,
+            buffer_size: document.querySelector('input[name="buffer_size"]').value,
+            keep_alive: document.querySelector('input[name="keep_alive"]').value,
+            timeout: document.querySelector('input[name="timeout"]').value,
+            updated_at: new Date().toISOString() // Thêm thời gian cập nhật
+          };
+
+          // Gửi lên Firebase
+          settingsRef.child('tcp').set(tcpData)
+            .then(() => {
+              alert("✅ Đã lưu cài đặt TCP lên Cloud thành công!");
+            })
+            .catch((error) => {
+              alert("❌ Lỗi khi lưu: " + error.message);
+            });
+        });
+
+        // (Tương tự, bạn có thể viết thêm code để lắng nghe form Wi-Fi)
+      };
+    </script>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ESP32 Settings</title>
