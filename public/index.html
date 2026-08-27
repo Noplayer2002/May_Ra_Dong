@@ -34,6 +34,8 @@
         .nav a { padding: 12px 20px; text-decoration: none; color: #555; font-weight: bold; border-right: 1px solid #ccc; transition: 0.3s; cursor: pointer; flex: 1; text-align: center; }
         .nav a:hover { background: #d5d5d5; }
         .nav a.active { background: #fff; color: #9ab474; border-top: 3px solid #9ab474; border-bottom: 2px solid #fff; margin-bottom: -2px; }
+        .action-bar { background: #f9f9f9; padding: 12px 20px; border-bottom: 1px solid #ddd; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        .action-bar .btn { margin: 0; padding: 8px 16px; font-size: 14px; width: auto; flex: 0 1 auto; }
         .container { max-width: 600px; margin: 20px auto; background: #fff; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); padding: 20px; }
         .page { display: none; }
         .page.active { display: block; }
@@ -77,6 +79,8 @@
             .label { width: 100%; margin-bottom: 5px; }
             .input-box { width: 100%; }
             .top-bar { flex-direction: column; gap: 10px; text-align: center; }
+            .action-bar { flex-direction: column; }
+            .action-bar .btn { width: 100%; }
         }
     </style>
 </head>
@@ -106,6 +110,12 @@
             <a class="active" onclick="switchTab(event, 'wifi')">Wi-Fi</a>
             <a onclick="switchTab(event, 'tcp')">TCP Client</a>
             <a onclick="switchTab(event, 'config')">Config</a>
+        </div>
+
+        <!-- ACTION BAR: CHECK CONNECTION & REFRESH -->
+        <div class="action-bar">
+            <button class="btn btn-orange" id="btn-check-connection" onclick="checkDeviceConnection()">⚡ Kiểm tra Online/Offline</button>
+            <button class="btn btn-blue" onclick="refreshCurrentDevice()">🔄 Làm mới thông tin</button>
         </div>
 
         <div class="container">
@@ -185,12 +195,6 @@
                     <span class="info-label">🔌 TCP Server:</span>
                     <span class="info-value" id="tcp-info">N/A</span>
                 </div>
-
-                <hr>
-
-                <!-- NÚT PING-PONG CHECK KẾT NỐI -->
-                <button class="btn btn-orange" id="btn-check-connection" onclick="checkDeviceConnection()">⚡ Kiểm tra Online/Offline</button>
-                <button class="btn btn-blue" onclick="refreshCurrentDevice()" style="margin-top: 10px;">🔄 Làm mới thông tin</button>
             </div>
         </div>
     </div>
