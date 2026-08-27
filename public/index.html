@@ -44,7 +44,7 @@
         .input-box { flex: 1; }
         input[type='text'], input[type='number'], input[type='password'], select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 3px; font-size: 14px; }
         input:focus, select:focus { outline: none; border-color: #9ab474; box-shadow: 0 0 5px rgba(154, 180, 116, 0.3); }
-        .btn { display: block; width: 100%; margin-top: 15px; padding: 12px; background: #4CAF50; color: white; border: none; font-size: 16px; cursor: pointer; border-radius: 4px; font-weight: bold; transition: 0.3s; }
+        .btn { display: block; width: 100%; margin-top: 15px; padding: 12px; background: #4CAF50; color: white; border: none; font-size: 16px; cursor: pointer; border-radius: 4px; font-weight: bold; }
         .btn:hover { background: #45a049; }
         .btn-blue { background: #2196F3; }
         .btn-blue:hover { background: #0b7dda; }
@@ -78,8 +78,19 @@
     <div class="container">
         <!-- TAB 1: WI-FI SETTINGS -->
         <div id="wifi" class="tab-content active">
-            <h2>Kết nối mạng Wi-Fi</h2>
+            <h2>Kết nối mạng Wi-Fi (device-local)</h2>
             <form id="wifi-connect-form">
+                <div class="form-group">
+                    <div class="row">
+                        <div class="label">Chọn thiết bị</div>
+                        <div class="input-box">
+                            <select id="device-select-wifi">
+                                <option value="">-- Đang tải danh sách ESP32 --</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <div class="row">
                         <div class="label">SSID</div>
@@ -92,18 +103,29 @@
                     <div class="row">
                         <div class="label">Password</div>
                         <div class="input-box">
-                            <input type="password" name="pass" placeholder="Mật khẩu">
+                            <input type="password" id="wifi-pass" name="pass" placeholder="Mật khẩu">
                         </div>
                     </div>
                 </div>
-                <button type="submit" class="btn">💾 Lưu cài đặt Wi-Fi</button>
+                <button type="submit" class="btn">💾 Lưu cài đặt Wi-Fi cho thiết bị</button>
             </form>
         </div>
 
         <!-- TAB 2: TCP CLIENT SETTINGS -->
         <div id="tcp" class="tab-content">
-            <h2>Socket Settings</h2>
+            <h2>Socket Settings (device-local)</h2>
             <form id="tcp-form">
+                <div class="form-group">
+                    <div class="row">
+                        <div class="label">Chọn thiết bị</div>
+                        <div class="input-box">
+                            <select id="device-select-tcp">
+                                <option value="">-- Đang tải danh sách ESP32 --</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <div class="row">
                         <div class="label">Server</div>
@@ -120,7 +142,7 @@
                         </div>
                     </div>
                 </div>
-                <button type="submit" class="btn">💾 Save Settings</button>
+                <button type="submit" class="btn">💾 Lưu cài đặt TCP cho thiết bị</button>
             </form>
         </div>
 
@@ -161,6 +183,11 @@
                 <span class="info-value" id="ssid-info">N/A</span>
             </div>
 
+            <div class="info-item">
+                <span class="info-label">🔌 TCP Server:</span>
+                <span class="info-value" id="tcp-info">N/A</span>
+            </div>
+
             <hr>
 
             <button class="btn btn-blue" onclick="loadESP32Devices()">🔄 Làm mới danh sách</button>
@@ -186,34 +213,56 @@
             devicesRef.on('value', (snapshot) => {
                 const data = snapshot.val();
                 const selectEl = document.getElementById('device-select');
+                const selectWifi = document.getElementById('device-select-wifi');
+                const selectTcp = document.getElementById('device-select-tcp');
 
                 if (!data) {
-                    selectEl.innerHTML = '<option value="">Chưa có ESP32 nào khai báo</option>';
+                    const emptyOption = '<option value="">Chưa có ESP32 nào khai báo</option>';
+                    selectEl.innerHTML = emptyOption;
+                    selectWifi.innerHTML = emptyOption;
+                    selectTcp.innerHTML = emptyOption;
                     resetUIInfo();
+                    devicesDataCache = {};
                     return;
                 }
 
                 devicesDataCache = data;
                 const currentSelected = selectEl.value;
+
+                // Build options for all selects
+                const makeOptions = () => {
+                    const frag = document.createDocumentFragment();
+                    Object.keys(data).forEach((deviceId) => {
+                        const dev = data[deviceId] || {};
+                        const info = dev.info || {};
+                        const option = document.createElement('option');
+                        option.value = deviceId;
+                        option.textContent = `${deviceId} (${info.ip || 'No IP'})`;
+                        frag.appendChild(option);
+                    });
+                    return frag;
+                };
+
+                // Populate selects
                 selectEl.innerHTML = '';
+                selectWifi.innerHTML = '';
+                selectTcp.innerHTML = '';
+                selectEl.appendChild(makeOptions());
+                selectWifi.appendChild(makeOptions());
+                selectTcp.appendChild(makeOptions());
 
-                // Thêm các ESP32 vào danh sách thả xuống
-                Object.keys(data).forEach((deviceId) => {
-                    const dev = data[deviceId];
-                    const option = document.createElement('option');
-                    option.value = deviceId;
-                    option.textContent = `${deviceId} (${dev.ip || 'No IP'})`;
-                    selectEl.appendChild(option);
-                });
-
-                // Giữ lại thiết bị đang chọn hoặc chọn thiết bị đầu tiên
+                // Keep previous selection if still exists, otherwise pick first
                 if (currentSelected && data[currentSelected]) {
                     selectEl.value = currentSelected;
                     updateUIWithDevice(data[currentSelected]);
                 } else {
                     const firstDeviceId = Object.keys(data)[0];
-                    selectEl.value = firstDeviceId;
-                    updateUIWithDevice(data[firstDeviceId]);
+                    if (firstDeviceId) {
+                        selectEl.value = firstDeviceId;
+                        selectWifi.value = firstDeviceId;
+                        selectTcp.value = firstDeviceId;
+                        updateUIWithDevice(data[firstDeviceId]);
+                    }
                 }
             }, (error) => {
                 console.error("Lỗi đọc Firebase:", error);
@@ -227,15 +276,48 @@
                 return;
             }
 
+            const info = device.info || {};
+            const tcp = device.tcp || {};
+
             const statusEl = document.getElementById('network-status');
-            const isOnline = device.status === 'online';
+            const isOnline = (info.status === 'online') || (info.connected === true);
 
             statusEl.textContent = isOnline ? '🟢 Online' : '🔴 Offline';
             statusEl.className = 'info-value ' + (isOnline ? 'status-connected' : 'status-disconnected');
 
-            document.getElementById('ip-address').textContent = device.ip || 'N/A';
-            document.getElementById('mac-address').textContent = device.mac || 'N/A';
-            document.getElementById('ssid-info').textContent = device.ssid || 'N/A';
+            document.getElementById('ip-address').textContent = info.ip || 'N/A';
+            document.getElementById('mac-address').textContent = info.mac || 'N/A';
+            document.getElementById('ssid-info').textContent = info.ssid || (info.wifi && info.wifi.ssid) || 'N/A';
+
+            // show tcp info summary
+            if (tcp.server_ip || tcp.server_port) {
+                document.getElementById('tcp-info').textContent = `${tcp.server_ip || 'N/A'}:${tcp.server_port || 'N/A'}`;
+            } else {
+                document.getElementById('tcp-info').textContent = 'N/A';
+            }
+
+            // Fill forms for wifi and tcp, if selects point to this device
+            const selectedWifi = document.getElementById('device-select-wifi').value;
+            const selectedTcp = document.getElementById('device-select-tcp').value;
+            const selectedConfig = document.getElementById('device-select').value;
+
+            // If the wifi select points to this device, fill wifi inputs
+            if (selectedWifi && devicesDataCache[selectedWifi] === device) {
+                const wifiObj = info.wifi || {};
+                document.getElementById('ssid').value = wifiObj.ssid || info.ssid || '';
+                document.getElementById('wifi-pass').value = wifiObj.pass || '';
+            }
+
+            // If tcp select points to this device, fill tcp inputs
+            if (selectedTcp && devicesDataCache[selectedTcp] === device) {
+                document.getElementById('server_ip').value = tcp.server_ip || '';
+                document.getElementById('server_port').value = tcp.server_port || '';
+            }
+
+            // If config view select points to this device, nothing to fill except info already set
+            if (selectedConfig && devicesDataCache[selectedConfig] === device) {
+                // nothing extra
+            }
         }
 
         function resetUIInfo() {
@@ -244,34 +326,135 @@
             document.getElementById('ip-address').textContent = 'N/A';
             document.getElementById('mac-address').textContent = 'N/A';
             document.getElementById('ssid-info').textContent = 'N/A';
+            document.getElementById('tcp-info').textContent = 'N/A';
+
+            // clear form fields
+            if (document.getElementById('ssid')) document.getElementById('ssid').value = '';
+            if (document.getElementById('wifi-pass')) document.getElementById('wifi-pass').value = '';
+            if (document.getElementById('server_ip')) document.getElementById('server_ip').value = '';
+            if (document.getElementById('server_port')) document.getElementById('server_port').value = '';
+        }
+
+        // Làm mới danh sách (one-time read)
+        function loadESP32Devices() {
+            const devicesRef = db.ref('esp32/devices');
+            devicesRef.once('value').then(snapshot => {
+                const data = snapshot.val();
+                if (!data) {
+                    alert("Chưa có ESP32 nào trên Firebase.");
+                    return;
+                }
+                devicesDataCache = data;
+
+                // Reuse the same UI update logic by triggering on value callback indirectly:
+                // we'll call updateUIWithDevice for current selected device (or first)
+                const selectEl = document.getElementById('device-select');
+                const firstDeviceId = Object.keys(data)[0];
+                if (selectEl.value && data[selectEl.value]) {
+                    updateUIWithDevice(data[selectEl.value]);
+                } else if (firstDeviceId) {
+                    updateUIWithDevice(data[firstDeviceId]);
+                }
+                alert("Đã làm mới danh sách ESP32.");
+            }).catch(err => {
+                console.error(err);
+                alert("Lỗi khi làm mới: " + err.message);
+            });
         }
 
         // Khởi tạo các sự kiện khi DOM sẵn sàng
         document.addEventListener('DOMContentLoaded', function() {
-            // Lắng nghe dữ liệu thiết bị từ Firebase
+            // Lắng nghe dữ liệu thiết bị từ Firebase (realtime)
             listenToESP32Devices();
 
-            // Lắng nghe sự kiện người dùng chọn thiết bị khác trên menu drop-down
-            document.getElementById('device-select').addEventListener('change', function(e) {
-                const selectedId = e.target.value;
-                if (devicesDataCache[selectedId]) {
-                    updateUIWithDevice(devicesDataCache[selectedId]);
-                }
-            });
+            // Khi chọn thiết bị trong config view
+            const configSelect = document.getElementById('device-select');
+            if (configSelect) {
+                configSelect.addEventListener('change', function(e) {
+                    const selectedId = e.target.value;
+                    if (devicesDataCache[selectedId]) {
+                        updateUIWithDevice(devicesDataCache[selectedId]);
+                    } else {
+                        resetUIInfo();
+                    }
+                });
+            }
 
-            // Lắng nghe submit TCP Form
+            // Khi chọn device cho wifi form: cập nhật form bằng dữ liệu device hiện tại
+            const wifiSelect = document.getElementById('device-select-wifi');
+            if (wifiSelect) {
+                wifiSelect.addEventListener('change', function(e) {
+                    const selectedId = e.target.value;
+                    if (devicesDataCache[selectedId]) {
+                        const info = (devicesDataCache[selectedId].info || {});
+                        const wifiObj = info.wifi || {};
+                        document.getElementById('ssid').value = wifiObj.ssid || info.ssid || '';
+                        document.getElementById('wifi-pass').value = wifiObj.pass || '';
+                    } else {
+                        document.getElementById('ssid').value = '';
+                        document.getElementById('wifi-pass').value = '';
+                    }
+                });
+            }
+
+            // Khi chọn device cho tcp form: cập nhật form bằng dữ liệu device hiện tại
+            const tcpSelect = document.getElementById('device-select-tcp');
+            if (tcpSelect) {
+                tcpSelect.addEventListener('change', function(e) {
+                    const selectedId = e.target.value;
+                    if (devicesDataCache[selectedId]) {
+                        const tcpObj = (devicesDataCache[selectedId].tcp || {});
+                        document.getElementById('server_ip').value = tcpObj.server_ip || '';
+                        document.getElementById('server_port').value = tcpObj.server_port || '';
+                    } else {
+                        document.getElementById('server_ip').value = '';
+                        document.getElementById('server_port').value = '';
+                    }
+                });
+            }
+
+            // Lắng nghe submit Wi-Fi Form (ghi vào esp32/devices/{id}/info/wifi)
+            const wifiForm = document.getElementById('wifi-connect-form');
+            if (wifiForm) {
+                wifiForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const selectedId = document.getElementById('device-select-wifi').value;
+                    if (!selectedId) {
+                        alert("Vui lòng chọn một thiết bị để lưu Wi-Fi.");
+                        return;
+                    }
+
+                    const wifiData = {
+                        ssid: document.getElementById('ssid').value,
+                        pass: document.getElementById('wifi-pass').value,
+                        updated_at: new Date().toISOString()
+                    };
+
+                    db.ref(`esp32/devices/${selectedId}/info/wifi`).set(wifiData)
+                        .then(() => alert("✅ Đã lưu cài đặt Wi-Fi cho thiết bị " + selectedId))
+                        .catch((error) => alert("❌ Lỗi: " + error.message));
+                });
+            }
+
+            // Lắng nghe submit TCP Form (ghi vào esp32/devices/{id}/tcp)
             const tcpForm = document.getElementById('tcp-form');
             if (tcpForm) {
                 tcpForm.addEventListener('submit', function(e) {
                     e.preventDefault();
+                    const selectedId = document.getElementById('device-select-tcp').value;
+                    if (!selectedId) {
+                        alert("Vui lòng chọn một thiết bị để lưu cài đặt TCP.");
+                        return;
+                    }
+
                     const tcpData = {
                         server_ip: document.getElementById('server_ip').value,
                         server_port: parseInt(document.getElementById('server_port').value) || 8080,
                         updated_at: new Date().toISOString()
                     };
 
-                    db.ref('esp32/settings/tcp').set(tcpData)
-                        .then(() => alert("✅ Đã lưu cài đặt TCP!"))
+                    db.ref(`esp32/devices/${selectedId}/tcp`).set(tcpData)
+                        .then(() => alert("✅ Đã lưu cài đặt TCP cho thiết bị " + selectedId))
                         .catch((error) => alert("❌ Lỗi: " + error.message));
                 });
             }
