@@ -95,7 +95,11 @@
             
             <div id="devices-list"></div>
 
-            <button class="btn btn-blue" onclick="loadESP32Devices()">🔄 Làm mới danh sách</button>
+            <!-- ACTION BAR: CHECK & REFRESH LIST -->
+            <div class="action-bar">
+                <button class="btn btn-orange" id="btn-check-device-status" onclick="checkDeviceStatusFromList()">⚡ Kiểm tra Online/Offline</button>
+                <button class="btn btn-blue" onclick="loadESP32Devices()">🔄 Làm mới danh sách</button>
+            </div>
         </div>
     </div>
 
@@ -112,9 +116,8 @@
             <a onclick="switchTab(event, 'config')">Config</a>
         </div>
 
-        <!-- ACTION BAR: CHECK CONNECTION & REFRESH -->
+        <!-- ACTION BAR: REFRESH ONLY -->
         <div class="action-bar">
-            <button class="btn btn-orange" id="btn-check-connection" onclick="checkDeviceConnection()">⚡ Kiểm tra Online/Offline</button>
             <button class="btn btn-blue" onclick="refreshCurrentDevice()">🔄 Làm mới thông tin</button>
         </div>
 
@@ -203,6 +206,7 @@
     <script>
         let devicesDataCache = {};
         let selectedDeviceId = null;
+        let checkingDeviceId = null;
 
         // ========== PAGE NAVIGATION ==========
         function showPage(pageName) {
@@ -326,24 +330,21 @@
             document.getElementById('server_port').value = '';
         }
 
-        // ========== THUẬT TOÁN PING - PONG CHECK KẾT NỐI ==========
-        function checkDeviceConnection() {
+        // ========== CHECK CONNECTION FROM DEVICE SELECTION PAGE ==========
+        function checkDeviceStatusFromList() {
             if (!selectedDeviceId) {
                 alert("Vui lòng chọn thiết bị trước!");
                 return;
             }
 
-            const statusEl = document.getElementById('network-status');
-            const btnCheck = document.getElementById('btn-check-connection');
-
-            statusEl.textContent = '⏳ Đang kiểm tra...';
-            statusEl.className = 'info-value';
+            checkingDeviceId = selectedDeviceId;
+            const btnCheck = document.getElementById('btn-check-device-status');
             btnCheck.disabled = true;
 
             const currentPing = Date.now();
-            const pingRef = db.ref(`esp32/devices/${selectedDeviceId}/info/ping`);
-            const pongRef = db.ref(`esp32/devices/${selectedDeviceId}/info/pong`);
-            const statusRef = db.ref(`esp32/devices/${selectedDeviceId}/info/status`);
+            const pingRef = db.ref(`esp32/devices/${checkingDeviceId}/info/ping`);
+            const pongRef = db.ref(`esp32/devices/${checkingDeviceId}/info/pong`);
+            const statusRef = db.ref(`esp32/devices/${checkingDeviceId}/info/status`);
 
             // 1. Ghi mã ping lên Firebase
             pingRef.set(currentPing).then(() => {
@@ -353,25 +354,27 @@
                     if (pongValue === currentPing) {
                         // ESP32 ĐÃ TRẢ LỜI -> ONLINE
                         statusRef.set('online');
-                        statusEl.textContent = '🟢 Online';
-                        statusEl.className = 'info-value status-connected';
                         
                         // Dọn dẹp listener & timeout
                         pongRef.off('value', pongListener);
                         clearTimeout(timeoutId);
                         btnCheck.disabled = false;
+                        
+                        // Cập nhật danh sách
+                        renderDevicesList(devicesDataCache);
                     }
                 });
 
                 // 3. Đặt timeout 3 giây, nếu không có phản hồi -> OFFLINE
                 const timeoutId = setTimeout(() => {
                     statusRef.set('offline');
-                    statusEl.textContent = '🔴 Offline';
-                    statusEl.className = 'info-value status-disconnected';
 
                     // Dọn dẹp listener
                     pongRef.off('value', pongListener);
                     btnCheck.disabled = false;
+                    
+                    // Cập nhật danh sách
+                    renderDevicesList(devicesDataCache);
                 }, 3000);
 
             }).catch(err => {
