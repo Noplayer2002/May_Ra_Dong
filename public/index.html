@@ -50,6 +50,8 @@
         .btn:hover { background: #45a049; }
         .btn-blue { background: #2196F3; }
         .btn-blue:hover { background: #0b7dda; }
+        .btn-orange { background: #ff9800; }
+        .btn-orange:hover { background: #e68a00; }
         .btn-secondary { background: #757575; padding: 8px 12px; font-size: 14px; width: auto; margin: 0; }
         .btn-secondary:hover { background: #616161; }
         hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
@@ -161,7 +163,7 @@
 
                 <div class="info-item">
                     <span class="info-label">📡 Trạng thái mạng:</span>
-                    <span class="info-value status-disconnected" id="network-status">Đang tải...</span>
+                    <span class="info-value status-disconnected" id="network-status">Chưa kiểm tra</span>
                 </div>
 
                 <div class="info-item">
@@ -186,7 +188,9 @@
 
                 <hr>
 
-                <button class="btn btn-blue" onclick="refreshCurrentDevice()">🔄 Làm mới thông tin</button>
+                <!-- NÚT PING-PONG CHECK KẾT NỐI -->
+                <button class="btn btn-orange" id="btn-check-connection" onclick="checkDeviceConnection()">⚡ Kiểm tra Online/Offline</button>
+                <button class="btn btn-blue" onclick="refreshCurrentDevice()" style="margin-top: 10px;">🔄 Làm mới thông tin</button>
             </div>
         </div>
     </div>
@@ -220,7 +224,7 @@
             Object.keys(data).forEach((deviceId) => {
                 const device = data[deviceId] || {};
                 const info = device.info || {};
-                const isOnline = (info.status === 'online') || (info.connected === true);
+                const isOnline = (info.status === 'online');
                 const statusText = isOnline ? '🟢 Online' : '🔴 Offline';
                 const statusColor = isOnline ? '#4CAF50' : '#f44336';
 
@@ -253,11 +257,6 @@
                 const data = snapshot.val();
                 devicesDataCache = data || {};
                 renderDevicesList(data);
-                if (data && Object.keys(data).length > 0) {
-                    alert("✅ Đã tải danh sách ESP32.");
-                } else {
-                    alert("⚠️ Chưa có ESP32 nào trên Firebase.");
-                }
             }).catch(err => {
                 console.error(err);
                 alert("❌ Lỗi khi tải danh sách: " + err.message);
@@ -284,7 +283,7 @@
 
             // Update Config tab info
             const statusEl = document.getElementById('network-status');
-            const isOnline = (info.status === 'online') || (info.connected === true);
+            const isOnline = (info.status === 'online');
 
             statusEl.textContent = isOnline ? '🟢 Online' : '🔴 Offline';
             statusEl.className = 'info-value ' + (isOnline ? 'status-connected' : 'status-disconnected');
@@ -323,10 +322,63 @@
             document.getElementById('server_port').value = '';
         }
 
+        // ========== THUẬT TOÁN PING - PONG CHECK KẾT NỐI ==========
+        function checkDeviceConnection() {
+            if (!selectedDeviceId) {
+                alert("Vui lòng chọn thiết bị trước!");
+                return;
+            }
+
+            const statusEl = document.getElementById('network-status');
+            const btnCheck = document.getElementById('btn-check-connection');
+
+            statusEl.textContent = '⏳ Đang kiểm tra...';
+            statusEl.className = 'info-value';
+            btnCheck.disabled = true;
+
+            const currentPing = Date.now();
+            const pingRef = db.ref(`esp32/devices/${selectedDeviceId}/info/ping`);
+            const pongRef = db.ref(`esp32/devices/${selectedDeviceId}/info/pong`);
+            const statusRef = db.ref(`esp32/devices/${selectedDeviceId}/info/status`);
+
+            // 1. Ghi mã ping lên Firebase
+            pingRef.set(currentPing).then(() => {
+                // 2. Lắng nghe phản hồi (pong) từ ESP32
+                const pongListener = pongRef.on('value', (snapshot) => {
+                    const pongValue = snapshot.val();
+                    if (pongValue === currentPing) {
+                        // ESP32 ĐÃ TRẢ LỜI -> ONLINE
+                        statusRef.set('online');
+                        statusEl.textContent = '🟢 Online';
+                        statusEl.className = 'info-value status-connected';
+                        
+                        // Dọn dẹp listener & timeout
+                        pongRef.off('value', pongListener);
+                        clearTimeout(timeoutId);
+                        btnCheck.disabled = false;
+                    }
+                });
+
+                // 3. Đặt timeout 3 giây, nếu không có phản hồi -> OFFLINE
+                const timeoutId = setTimeout(() => {
+                    statusRef.set('offline');
+                    statusEl.textContent = '🔴 Offline';
+                    statusEl.className = 'info-value status-disconnected';
+
+                    // Dọn dẹp listener
+                    pongRef.off('value', pongListener);
+                    btnCheck.disabled = false;
+                }, 3000);
+
+            }).catch(err => {
+                alert("Lỗi khi gửi lệnh ping: " + err.message);
+                btnCheck.disabled = false;
+            });
+        }
+
         function refreshCurrentDevice() {
             if (selectedDeviceId && devicesDataCache[selectedDeviceId]) {
-                const devicesRef = db.ref('esp32/devices/' + selectedDeviceId);
-                devicesRef.once('value').then(snapshot => {
+                db.ref('esp32/devices/' + selectedDeviceId).once('value').then(snapshot => {
                     const device = snapshot.val();
                     if (device) {
                         devicesDataCache[selectedDeviceId] = device;
@@ -340,9 +392,9 @@
             }
         }
 
-        // ========== FORM SUBMISSIONS ==========
+        // ========== FORM SUBMISSIONS & REALTIME SYNC ==========
         document.addEventListener('DOMContentLoaded', function() {
-            // Lắng nghe Firebase realtime khi tab chọn thiết bị
+            // Lắng nghe realtime toàn bộ danh sách thiết bị
             const devicesRef = db.ref('esp32/devices');
             devicesRef.on('value', (snapshot) => {
                 const data = snapshot.val();
@@ -357,10 +409,7 @@
             if (wifiForm) {
                 wifiForm.addEventListener('submit', function(e) {
                     e.preventDefault();
-                    if (!selectedDeviceId) {
-                        alert("Vui lòng chọn một thiết bị.");
-                        return;
-                    }
+                    if (!selectedDeviceId) return;
 
                     const wifiData = {
                         ssid: document.getElementById('ssid').value,
@@ -369,14 +418,7 @@
                     };
 
                     db.ref(`esp32/devices/${selectedDeviceId}/info/wifi`).set(wifiData)
-                        .then(() => {
-                            alert("✅ Đã lưu cài đặt Wi-Fi cho " + selectedDeviceId);
-                            // Update cache
-                            if (devicesDataCache[selectedDeviceId]) {
-                                devicesDataCache[selectedDeviceId].info = devicesDataCache[selectedDeviceId].info || {};
-                                devicesDataCache[selectedDeviceId].info.wifi = wifiData;
-                            }
-                        })
+                        .then(() => alert("✅ Đã lưu cài đặt Wi-Fi!"))
                         .catch((error) => alert("❌ Lỗi: " + error.message));
                 });
             }
@@ -386,10 +428,7 @@
             if (tcpForm) {
                 tcpForm.addEventListener('submit', function(e) {
                     e.preventDefault();
-                    if (!selectedDeviceId) {
-                        alert("Vui lòng chọn một thiết bị.");
-                        return;
-                    }
+                    if (!selectedDeviceId) return;
 
                     const tcpData = {
                         server_ip: document.getElementById('server_ip').value,
@@ -398,13 +437,7 @@
                     };
 
                     db.ref(`esp32/devices/${selectedDeviceId}/tcp`).set(tcpData)
-                        .then(() => {
-                            alert("✅ Đã lưu cài đặt TCP cho " + selectedDeviceId);
-                            // Update cache
-                            if (devicesDataCache[selectedDeviceId]) {
-                                devicesDataCache[selectedDeviceId].tcp = tcpData;
-                            }
-                        })
+                        .then(() => alert("✅ Đã lưu cài đặt TCP!"))
                         .catch((error) => alert("❌ Lỗi: " + error.message));
                 });
             }
