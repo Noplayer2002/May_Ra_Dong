@@ -1,505 +1,275 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <!-- Gọi Firebase SDK (chỉ cần gọi nếu bạn chưa nhúng ở trên thẻ <head>) -->
-    <script defer src="/__/firebase/10.8.1/firebase-app-compat.js"></script>
-    <script defer src="/__/firebase/10.8.1/firebase-database-compat.js"></script>
-    <script defer src="/__/firebase/init.js"></script>
-
-    <script defer>
-      // Hàm chuyển Tab (Giữ nguyên của bạn)
-      function switchTab(tabName) {
-        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-        document.querySelectorAll('.nav a').forEach(link => link.classList.remove('active'));
-        document.getElementById(tabName).classList.add('active');
-        event.target.classList.add('active');
-      }
-
-      window.onload = function() {
-        // 1. Kết nối Database
-        const db = firebase.database();
-        const settingsRef = db.ref('esp32/settings'); // Tạo ngăn kéo chứa cài đặt
-
-        // 2. Bắt sự kiện khi bấm nút "Save Settings" của tab TCP
-        const tcpForm = document.querySelector('form[action="/tcp_save"]');
-        
-        tcpForm.addEventListener('submit', function(e) {
-          e.preventDefault(); // Chặn hành động tải lại trang mặc định của HTML
-
-          // Lấy dữ liệu từ các ô nhập liệu
-          const tcpData = {
-            server_ip: document.getElementById('server_ip').value,
-            server_port: document.querySelector('input[name="server_port"]').value,
-            local_port: document.querySelector('input[name="local_port"]').value,
-            buffer_size: document.querySelector('input[name="buffer_size"]').value,
-            keep_alive: document.querySelector('input[name="keep_alive"]').value,
-            timeout: document.querySelector('input[name="timeout"]').value,
-            updated_at: new Date().toISOString() // Thêm thời gian cập nhật
-          };
-
-          // Gửi lên Firebase
-          settingsRef.child('tcp').set(tcpData)
-            .then(() => {
-              alert("✅ Đã lưu cài đặt TCP lên Cloud thành công!");
-            })
-            .catch((error) => {
-              alert("❌ Lỗi khi lưu: " + error.message);
-            });
-        });
-
-        // (Tương tự, bạn có thể viết thêm code để lắng nghe form Wi-Fi)
-      };
-    </script>
+<html lang="vi">
+<head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ESP32 Settings</title>
 
+    <!-- 1. GỌI FIREBASE SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
+
+    <!-- 2. CẤU HÌNH FIREBASE (RẤT QUAN TRỌNG) -->
+    <script>
+        const firebaseConfig = {
+            // ĐIỀN THÔNG TIN FIREBASE CỦA BẠN VÀO ĐÂY
+            apiKey: "AIzaSyDKi7eC8WD7fi_lu2Lm9FxUwMBIPd23bcw",
+            authDomain: "may-ra-dong.firebaseapp.com",
+            databaseURL: "https://may-ra-dong-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "may-ra-dong",
+            storageBucket: "may-ra-dong.firebasestorage.app",
+            messagingSenderId: "777662906578",
+            appId: "1:777662906578:web:7b52d7ed61fb868b112d0b",
+            measurementId: "G-F61WGFMGQ6"
+        };
+        // Khởi tạo Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+    </script>
+
+    <!-- 3. CSS GIAO DIỆN CỦA BẠN (GIỮ NGUYÊN) -->
     <style media="screen">
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
-      body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background: #f4f4f4;
-        margin: 0;
-      }
-
-      .top-bar {
-        background: #9ab474;
-        color: white;
-        padding: 15px 20px;
-        font-size: 20px;
-        font-weight: bold;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      }
-
-      .nav {
-        background: #e0e0e0;
-        display: flex;
-        border-bottom: 2px solid #9ab474;
-      }
-
-      .nav a {
-        padding: 12px 20px;
-        text-decoration: none;
-        color: #555;
-        font-weight: bold;
-        border-right: 1px solid #ccc;
-        transition: 0.3s;
-        cursor: pointer;
-        flex: 1;
-        text-align: center;
-      }
-
-      .nav a:hover {
-        background: #d5d5d5;
-      }
-
-      .nav a.active {
-        background: #fff;
-        color: #9ab474;
-        border-top: 3px solid #9ab474;
-        border-bottom: 2px solid #fff;
-        margin-bottom: -2px;
-      }
-
-      .container {
-        max-width: 600px;
-        margin: 20px auto;
-        background: #fff;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        padding: 20px;
-      }
-
-      .tab-content {
-        display: none;
-      }
-
-      .tab-content.active {
-        display: block;
-      }
-
-      h2 {
-        color: #555;
-        margin-top: 0;
-        margin-bottom: 20px;
-      }
-
-      h3 {
-        color: #555;
-        margin-top: 15px;
-        margin-bottom: 10px;
-        font-size: 16px;
-      }
-
-      .row {
-        display: flex;
-        align-items: center;
-        padding: 12px 0;
-        border-bottom: 1px solid #eee;
-      }
-
-      .row:last-child {
-        border-bottom: none;
-      }
-
-      .label {
-        width: 140px;
-        font-weight: bold;
-        color: #555;
-      }
-
-      .input-box {
-        flex: 1;
-      }
-
-      input[type='text'],
-      input[type='number'],
-      input[type='password'] {
-        width: 100%;
-        padding: 10px;
-        border: 1px solid #ccc;
-        border-radius: 3px;
-        box-sizing: border-box;
-        font-size: 14px;
-      }
-
-      input:focus {
-        outline: none;
-        border-color: #9ab474;
-        box-shadow: 0 0 5px rgba(154, 180, 116, 0.3);
-      }
-
-      .btn {
-        display: block;
-        width: 100%;
-        margin-top: 15px;
-        padding: 12px;
-        background: #4CAF50;
-        color: white;
-        border: none;
-        font-size: 16px;
-        cursor: pointer;
-        border-radius: 4px;
-        font-weight: bold;
-        transition: 0.3s;
-      }
-
-      .btn:hover {
-        background: #45a049;
-      }
-
-      .btn-blue {
-        background: #2196F3;
-      }
-
-      .btn-blue:hover {
-        background: #0b7dda;
-      }
-
-      .btn-wifi {
-        background: #f9f9f9;
-        color: #333;
-        border: 1px solid #ddd;
-        padding: 10px;
-        margin-bottom: 5px;
-        text-align: left;
-        font-weight: normal;
-        width: 100%;
-      }
-
-      .btn-wifi:hover {
-        background: #efefef;
-      }
-
-      .wifi-list {
-        max-height: 200px;
-        overflow-y: auto;
-        border: 1px solid #eee;
-        padding: 10px;
-        margin-bottom: 20px;
-        border-radius: 3px;
-      }
-
-      .no-networks {
-        text-align: center;
-        color: #999;
-        padding: 20px 0;
-      }
-
-      hr {
-        border: 0;
-        border-top: 1px solid #eee;
-        margin: 20px 0;
-      }
-
-      .info-item {
-        padding: 12px 0;
-        border-bottom: 1px solid #eee;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-
-      .info-item:last-child {
-        border-bottom: none;
-      }
-
-      .info-label {
-        font-weight: bold;
-        color: #555;
-      }
-
-      .info-value {
-        color: #333;
-        font-family: 'Courier New', monospace;
-        word-break: break-all;
-      }
-
-      .status-connected {
-        color: #4CAF50;
-        font-weight: bold;
-      }
-
-      .status-disconnected {
-        color: #f44336;
-        font-weight: bold;
-      }
-
-      .form-group {
-        margin-bottom: 15px;
-      }
-
-      @media (max-width: 600px) {
-        .container {
-          margin: 10px;
-          padding: 15px;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f4f4; margin: 0; }
+        .top-bar { background: #9ab474; color: white; padding: 15px 20px; font-size: 20px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .nav { background: #e0e0e0; display: flex; border-bottom: 2px solid #9ab474; }
+        .nav a { padding: 12px 20px; text-decoration: none; color: #555; font-weight: bold; border-right: 1px solid #ccc; transition: 0.3s; cursor: pointer; flex: 1; text-align: center; }
+        .nav a:hover { background: #d5d5d5; }
+        .nav a.active { background: #fff; color: #9ab474; border-top: 3px solid #9ab474; border-bottom: 2px solid #fff; margin-bottom: -2px; }
+        .container { max-width: 600px; margin: 20px auto; background: #fff; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); padding: 20px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        h2 { color: #555; margin-top: 0; margin-bottom: 20px; }
+        h3 { color: #555; margin-top: 15px; margin-bottom: 10px; font-size: 16px; }
+        .row { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
+        .row:last-child { border-bottom: none; }
+        .label { width: 140px; font-weight: bold; color: #555; }
+        .input-box { flex: 1; }
+        input[type='text'], input[type='number'], input[type='password'] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 3px; box-sizing: border-box; font-size: 14px; }
+        input:focus { outline: none; border-color: #9ab474; box-shadow: 0 0 5px rgba(154, 180, 116, 0.3); }
+        .btn { display: block; width: 100%; margin-top: 15px; padding: 12px; background: #4CAF50; color: white; border: none; font-size: 16px; cursor: pointer; border-radius: 4px; font-weight: bold; transition: 0.3s; }
+        .btn:hover { background: #45a049; }
+        .btn-blue { background: #2196F3; }
+        .btn-blue:hover { background: #0b7dda; }
+        .btn-wifi { background: #f9f9f9; color: #333; border: 1px solid #ddd; padding: 10px; margin-bottom: 5px; text-align: left; font-weight: normal; width: 100%; }
+        .btn-wifi:hover { background: #efefef; }
+        .wifi-list { max-height: 200px; overflow-y: auto; border: 1px solid #eee; padding: 10px; margin-bottom: 20px; border-radius: 3px; }
+        .no-networks { text-align: center; color: #999; padding: 20px 0; }
+        hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
+        .info-item { padding: 12px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .info-item:last-child { border-bottom: none; }
+        .info-label { font-weight: bold; color: #555; }
+        .info-value { color: #333; font-family: 'Courier New', monospace; word-break: break-all; }
+        .status-connected { color: #4CAF50; font-weight: bold; }
+        .status-disconnected { color: #f44336; font-weight: bold; }
+        .form-group { margin-bottom: 15px; }
+        @media (max-width: 600px) {
+            .container { margin: 10px; padding: 15px; }
+            .nav { flex-direction: column; }
+            .nav a { border-right: none; border-bottom: 1px solid #ccc; }
+            .row { flex-direction: column; align-items: flex-start; }
+            .label { width: 100%; margin-bottom: 5px; }
+            .input-box { width: 100%; }
         }
-
-        .nav {
-          flex-direction: column;
-        }
-
-        .nav a {
-          border-right: none;
-          border-bottom: 1px solid #ccc;
-        }
-
-        .row {
-          flex-direction: column;
-          align-items: flex-start;
-        }
-
-        .label {
-          width: 100%;
-          margin-bottom: 5px;
-        }
-
-        .input-box {
-          width: 100%;
-        }
-      }
     </style>
-  </head>
-  <body>
+</head>
+<body>
     <div class="top-bar">⚙️ ESP32 Settings</div>
     
     <div class="nav">
-      <a class="active" onclick="switchTab('wifi')">Wi-Fi</a>
-      <a onclick="switchTab('tcp')">TCP Client</a>
-      <a onclick="switchTab('config')">Config</a>
+        <a class="active" onclick="switchTab(event, 'wifi')">Wi-Fi</a>
+        <a onclick="switchTab(event, 'tcp')">TCP Client</a>
+        <a onclick="switchTab(event, 'config')">Config</a>
     </div>
 
     <div class="container">
-      <!-- TAB 1: WI-FI SETTINGS -->
-      <div id="wifi" class="tab-content active">
-        <h2>Kết nối mạng Wi-Fi</h2>
-        
-        <form action="/wifi" method="GET" style="margin-bottom: 20px;">
-          <input type="hidden" name="scan" value="1">
-          <button type="submit" class="btn btn-blue">📡 Quét tìm mạng xung quanh</button>
-        </form>
+        <!-- TAB 1: WI-FI SETTINGS -->
+        <div id="wifi" class="tab-content active">
+            <h2>Kết nối mạng Wi-Fi</h2>
+            
+            <form id="wifi-scan-form" style="margin-bottom: 20px;">
+                <button type="submit" class="btn btn-blue">📡 Quét tìm mạng xung quanh</button>
+            </form>
 
-        <hr>
+            <hr>
 
-        <div id="wifi-list-container" style="display: none;">
-          <h3>Danh sách Wi-Fi tìm thấy:</h3>
-          <div class="wifi-list" id="wifi-list">
-            <p class="no-networks">Đang tìm kiếm mạng...</p>
-          </div>
+            <div id="wifi-list-container" style="display: none;">
+                <h3>Danh sách Wi-Fi tìm thấy:</h3>
+                <div class="wifi-list" id="wifi-list">
+                    <p class="no-networks">Đang tìm kiếm mạng...</p>
+                </div>
+            </div>
+
+            <form id="wifi-connect-form">
+                <div class="form-group">
+                    <div class="row">
+                        <div class="label">SSID</div>
+                        <div class="input-box">
+                            <input type="text" id="ssid" name="ssid" placeholder="Tên mạng Wi-Fi" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="row">
+                        <div class="label">Password</div>
+                        <div class="input-box">
+                            <input type="password" name="pass" placeholder="Mật khẩu">
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn">💾 Lưu & Khởi Động Lại</button>
+            </form>
         </div>
 
-        <form action="/connect" method="POST">
-          <div class="form-group">
-            <div class="row">
-              <div class="label">SSID</div>
-              <div class="input-box">
-                <input type="text" id="ssid" name="ssid" placeholder="Tên mạng Wi-Fi" required>
-              </div>
-            </div>
-          </div>
+        <!-- TAB 2: TCP CLIENT SETTINGS -->
+        <div id="tcp" class="tab-content">
+            <h2>Socket Settings</h2>
+            
+            <form id="tcp-form">
+                <div class="form-group">
+                    <div class="row">
+                        <div class="label">Server</div>
+                        <div class="input-box">
+                            <input type="text" id="server_ip" name="server_ip" placeholder="192.168.1.100" required>
+                        </div>
+                    </div>
+                </div>
 
-          <div class="form-group">
-            <div class="row">
-              <div class="label">Password</div>
-              <div class="input-box">
-                <input type="password" name="pass" placeholder="Mật khẩu">
-              </div>
-            </div>
-          </div>
+                <div class="form-group">
+                    <div class="row">
+                        <div class="label">Server Port</div>
+                        <div class="input-box">
+                            <input type="number" id="server_port" name="server_port" min="1" max="65535" placeholder="8080" required>
+                        </div>
+                    </div>
+                </div>
 
-          <button type="submit" class="btn">💾 Lưu & Khởi Động Lại</button>
-        </form>
-      </div>
+                <div class="form-group">
+                    <div class="row">
+                        <div class="label">Local Port</div>
+                        <div class="input-box">
+                            <input type="number" id="local_port" name="local_port" min="1" max="65535" placeholder="5000">
+                        </div>
+                    </div>
+                </div>
 
-      <!-- TAB 2: TCP CLIENT SETTINGS -->
-      <div id="tcp" class="tab-content">
-        <h2>Socket Settings</h2>
-        
-        <form action="/tcp_save" method="POST">
-          <div class="form-group">
-            <div class="row">
-              <div class="label">Server</div>
-              <div class="input-box">
-                <input type="text" id="server_ip" name="server_ip" placeholder="192.168.1.100" required>
-              </div>
-            </div>
-          </div>
+                <div class="form-group">
+                    <div class="row">
+                        <div class="label">Buffer Size</div>
+                        <div class="input-box">
+                            <input type="number" id="buffer_size" name="buffer_size" min="256" placeholder="1024">
+                        </div>
+                    </div>
+                </div>
 
-          <div class="form-group">
-            <div class="row">
-              <div class="label">Server Port</div>
-              <div class="input-box">
-                <input type="number" name="server_port" min="1" max="65535" placeholder="8080" required>
-              </div>
-            </div>
-          </div>
+                <div class="form-group">
+                    <div class="row">
+                        <div class="label">Keep Alive(s)</div>
+                        <div class="input-box">
+                            <input type="number" id="keep_alive" name="keep_alive" min="0" placeholder="60">
+                        </div>
+                    </div>
+                </div>
 
-          <div class="form-group">
-            <div class="row">
-              <div class="label">Local Port</div>
-              <div class="input-box">
-                <input type="number" name="local_port" min="1" max="65535" placeholder="5000">
-              </div>
-            </div>
-          </div>
+                <div class="form-group">
+                    <div class="row">
+                        <div class="label">Timeout(s)</div>
+                        <div class="input-box">
+                            <input type="number" id="timeout" name="timeout" min="1" placeholder="30">
+                        </div>
+                    </div>
+                </div>
 
-          <div class="form-group">
-            <div class="row">
-              <div class="label">Buffer Size</div>
-              <div class="input-box">
-                <input type="number" name="buffer_size" min="256" placeholder="1024">
-              </div>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <div class="row">
-              <div class="label">Keep Alive(s)</div>
-              <div class="input-box">
-                <input type="number" name="keep_alive" min="0" placeholder="60">
-              </div>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <div class="row">
-              <div class="label">Timeout(s)</div>
-              <div class="input-box">
-                <input type="number" name="timeout" min="1" placeholder="30">
-              </div>
-            </div>
-          </div>
-
-          <button type="submit" class="btn">💾 Save Settings</button>
-        </form>
-      </div>
-
-      <!-- TAB 3: SYSTEM INFO -->
-      <div id="config" class="tab-content">
-        <h2>Thông tin hệ thống</h2>
-        
-        <div class="info-item">
-          <span class="info-label">📡 Trạng thái mạng:</span>
-          <span class="info-value status-disconnected" id="network-status">Chưa kết nối</span>
+                <button type="submit" class="btn">💾 Save Settings</button>
+            </form>
         </div>
 
-        <div class="info-item">
-          <span class="info-label">🌐 IP Address:</span>
-          <span class="info-value" id="ip-address">N/A</span>
+        <!-- TAB 3: SYSTEM INFO -->
+        <div id="config" class="tab-content">
+            <h2>Thông tin hệ thống</h2>
+            
+            <div class="info-item">
+                <span class="info-label">📡 Trạng thái mạng:</span>
+                <span class="info-value status-disconnected" id="network-status">Chưa kết nối</span>
+            </div>
+
+            <div class="info-item">
+                <span class="info-label">🌐 IP Address:</span>
+                <span class="info-value" id="ip-address">N/A</span>
+            </div>
+
+            <div class="info-item">
+                <span class="info-label">🔗 MAC Address:</span>
+                <span class="info-value" id="mac-address">N/A</span>
+            </div>
+
+            <div class="info-item">
+                <span class="info-label">📊 SSID:</span>
+                <span class="info-value" id="ssid-info">N/A</span>
+            </div>
+
+            <div class="info-item">
+                <span class="info-label">📶 Signal Strength:</span>
+                <span class="info-value" id="signal-strength">N/A</span>
+            </div>
+
+            <hr>
+
+            <button class="btn btn-blue" onclick="location.reload()">🔄 Làm mới thông tin</button>
         </div>
-
-        <div class="info-item">
-          <span class="info-label">🔗 MAC Address:</span>
-          <span class="info-value" id="mac-address">N/A</span>
-        </div>
-
-        <div class="info-item">
-          <span class="info-label">📊 SSID:</span>
-          <span class="info-value" id="ssid-info">N/A</span>
-        </div>
-
-        <div class="info-item">
-          <span class="info-label">📶 Signal Strength:</span>
-          <span class="info-value" id="signal-strength">N/A</span>
-        </div>
-
-        <hr>
-
-        <button class="btn btn-blue" onclick="location.reload()">🔄 Làm mới thông tin</button>
-      </div>
     </div>
 
+    <!-- 4. LOGIC JAVASCRIPT GỘP CHUNG -->
     <script>
-      // Tab switching function
-      function switchTab(tabName) {
-        // Hide all tabs
-        const tabs = document.querySelectorAll('.tab-content');
-        tabs.forEach(tab => tab.classList.remove('active'));
+        // Hàm chuyển Tab
+        function switchTab(event, tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav a').forEach(link => link.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
 
-        // Remove active class from all nav links
-        const navLinks = document.querySelectorAll('.nav a');
-        navLinks.forEach(link => link.classList.remove('active'));
+        document.addEventListener('DOMContentLoaded', function() {
+            // Lắng nghe sự kiện lưu TCP Form
+            const tcpForm = document.getElementById('tcp-form');
+            if (tcpForm) {
+                tcpForm.addEventListener('submit', function(e) {
+                    e.preventDefault(); // Chặn reload trang
 
-        // Show selected tab
-        document.getElementById(tabName).classList.add('active');
+                    // Lấy giá trị, nếu rỗng thì cho về mặc định (tránh lỗi null)
+                    const serverIp = document.getElementById('server_ip').value;
+                    const serverPort = parseInt(document.getElementById('server_port').value) || 8080;
+                    const localPort = parseInt(document.getElementById('local_port').value) || 5000;
+                    const bufferSize = parseInt(document.getElementById('buffer_size').value) || 1024;
+                    const keepAlive = parseInt(document.getElementById('keep_alive').value) || 60;
+                    const timeout = parseInt(document.getElementById('timeout').value) || 30;
 
-        // Add active class to clicked nav link
-        event.target.classList.add('active');
-      }
+                    // Chuẩn bị cục dữ liệu JSON
+                    const tcpData = {
+                        server_ip: serverIp,
+                        server_port: serverPort,
+                        local_port: localPort,
+                        buffer_size: bufferSize,
+                        keep_alive: keepAlive,
+                        timeout: timeout,
+                        updated_at: new Date().toISOString()
+                    };
 
-      // Set SSID from Wi-Fi list
-      function setSSID(ssidName) {
-        document.getElementById('ssid').value = ssidName;
-      }
-
-      // Load Wi-Fi list (simulate API call)
-      function loadWiFiList() {
-        // This would normally call the ESP32 /wifi endpoint
-        // For now, it's a placeholder for the form submission
-        console.log('Wi-Fi scan initiated');
-      }
-
-      // Initialize on page load
-      document.addEventListener('DOMContentLoaded', function() {
-        console.log('ESP32 Settings Dashboard loaded');
-        
-        // You can add code here to fetch system info from ESP32
-        // For example: fetch('/api/status').then(...)
-      });
-
-      // Handle form submissions
-      document.querySelectorAll('form').forEach(form => {
-        form.addEventListener('submit', function(e) {
-          // Optional: Add validation or loading indicator
-          console.log('Form submitted:', this.action);
+                    // Gửi dữ liệu lên Firebase
+                    console.log("Đang gửi dữ liệu lên Firebase...", tcpData);
+                    db.ref('esp32/settings/tcp').set(tcpData)
+                        .then(() => {
+                            alert("✅ Đã lưu cài đặt TCP lên Firebase thành công!");
+                        })
+                        .catch((error) => {
+                            alert("❌ Lỗi khi lưu Firebase: " + error.message);
+                            console.error(error);
+                        });
+                });
+            }
         });
-      });
     </script>
-  </body>
+</body>
 </html>
