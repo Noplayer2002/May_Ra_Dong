@@ -52,7 +52,7 @@
 
         .row { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
         .row:last-child { border-bottom: none; }
-        .label { width: 220px; font-weight: bold; color: #555; font-size: 14px;} /* Tăng width để chứa tên tham số dài */
+        .label { width: 220px; font-weight: bold; color: #555; font-size: 14px;} 
         .input-box { flex: 1; }
         input[type='text'], input[type='number'], input[type='password'] { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 3px; font-size: 14px; }
         .btn { display: block; width: 100%; margin-top: 15px; padding: 12px; background: #4CAF50; color: white; border: none; font-size: 16px; cursor: pointer; border-radius: 4px; font-weight: bold; }
@@ -63,7 +63,6 @@
         .info-label { font-weight: bold; color: #555; }
         .info-value { color: #333; font-weight: bold; }
 
-        /* Style riêng cho các nhóm cấu hình (Section) */
         .section-title { margin-top: 20px; font-size: 16px; font-weight: bold; color: #9ab474; border-bottom: 2px solid #eee; padding-bottom: 5px; }
 
         @media (max-width: 600px) {
@@ -95,7 +94,7 @@
             <a class="active" onclick="switchTab(event, 'wifi')">Wi-Fi</a>
             <a onclick="switchTab(event, 'tcp')">TCP</a>
             <a onclick="switchTab(event, 'config')">Thông tin</a>
-            <a onclick="switchTab(event, 'plasma')">Plasma Thawer</a> <!-- TAB MỚI -->
+            <a onclick="switchTab(event, 'plasma')">Plasma Thawer</a>
         </div>
         <div class="container">
             <div id="wifi" class="tab-content active">
@@ -112,13 +111,15 @@
                     <button type="submit" class="btn">💾 Lưu TCP</button>
                 </form>
             </div>
+            
+            <!-- CẬP NHẬT TAB THÔNG TIN Ở ĐÂY -->
             <div id="config" class="tab-content">
                 <div class="info-item"><span class="info-label">📡 Trạng thái:</span><span class="info-value" id="network-status">...</span></div>
                 <div class="info-item"><span class="info-label">🌐 IP:</span><span class="info-value" id="ip-address">N/A</span></div>
                 <div class="info-item"><span class="info-label">🔗 MAC:</span><span class="info-value" id="mac-address">N/A</span></div>
+                <div class="info-item"><span class="info-label">🔋 Pin:</span><span class="info-value" id="battery-level">N/A</span></div>
             </div>
 
-            <!-- NỘI DUNG TAB PLASMA THAWER CONFIG -->
             <div id="plasma" class="tab-content">
                 <form id="plasma-form">
                     <div class="section-title">Cài Đặt Nhiệt Độ Chung</div>
@@ -209,6 +210,11 @@
             stEl.style.color = isOnline ? '#4CAF50' : '#f44336';
             document.getElementById('ip-address').textContent = info.ip || 'N/A';
             document.getElementById('mac-address').textContent = info.mac || 'N/A';
+            
+            // CẬP NHẬT LOGIC LẤY DATA PIN Ở ĐÂY
+            // Kiểm tra xem info.pin có tồn tại không. Nếu có thì thêm dấu %, nếu không thì để N/A
+            document.getElementById('battery-level').textContent = (info.pin !== undefined && info.pin !== null) ? info.pin + '%' : 'N/A';
+            
             document.getElementById('ssid').value = (info.wifi && info.wifi.ssid) || info.ssid || '';
             document.getElementById('wifi-pass').value = (info.wifi && info.wifi.pass) || '';
             document.getElementById('server_ip').value = tcp.server_ip || '';
@@ -292,7 +298,6 @@
             document.getElementById('plasma-form').onsubmit = (e) => {
                 e.preventDefault();
                 
-                // ParseFloat dùng để đảm bảo dữ liệu gửi lên Firebase là Dạng Số (hỗ trợ cả số thập phân)
                 const plasmaData = {
                     sp_t_operator: parseFloat(document.getElementById('sp_t_operator').value),
                     sp_t_hot: parseFloat(document.getElementById('sp_t_hot').value),
