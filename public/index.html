@@ -24,7 +24,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f4f4; margin: 0; }
         .top-bar { background: #9ab474; color: white; padding: 15px 20px; font-size: 20px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
-        .nav { background: #e0e0e0; display: flex; border-bottom: 2px solid #9ab474; }
+        .nav { background: #e0e0e0; display: flex; border-bottom: 2px solid #9ab474; overflow-x: auto; white-space: nowrap;}
         .nav a { padding: 12px 20px; text-decoration: none; color: #555; font-weight: bold; border-right: 1px solid #ccc; transition: 0.3s; cursor: pointer; flex: 1; text-align: center; }
         .nav a:hover { background: #d5d5d5; }
         .nav a.active { background: #fff; color: #9ab474; border-top: 3px solid #9ab474; border-bottom: 2px solid #fff; margin-bottom: -2px; }
@@ -50,11 +50,11 @@
         .dot.online { background-color: #4CAF50; box-shadow: 0 0 5px #4CAF50; }
         .dot.offline { background-color: #f44336; }
 
-        .row { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
+        .row { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
         .row:last-child { border-bottom: none; }
-        .label { width: 140px; font-weight: bold; color: #555; }
+        .label { width: 220px; font-weight: bold; color: #555; font-size: 14px;} /* Tăng width để chứa tên tham số dài */
         .input-box { flex: 1; }
-        input[type='text'], input[type='number'], input[type='password'] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 3px; font-size: 14px; }
+        input[type='text'], input[type='number'], input[type='password'] { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 3px; font-size: 14px; }
         .btn { display: block; width: 100%; margin-top: 15px; padding: 12px; background: #4CAF50; color: white; border: none; font-size: 16px; cursor: pointer; border-radius: 4px; font-weight: bold; }
         .btn-orange { background: #ff9800; }
         .btn-secondary { background: #757575; padding: 8px 12px; font-size: 14px; width: auto; margin: 0; }
@@ -63,9 +63,11 @@
         .info-label { font-weight: bold; color: #555; }
         .info-value { color: #333; font-weight: bold; }
 
+        /* Style riêng cho các nhóm cấu hình (Section) */
+        .section-title { margin-top: 20px; font-size: 16px; font-weight: bold; color: #9ab474; border-bottom: 2px solid #eee; padding-bottom: 5px; }
+
         @media (max-width: 600px) {
             .container { margin: 10px; padding: 15px; }
-            .nav { flex-direction: column; }
             .row { flex-direction: column; align-items: flex-start; }
             .label { width: 100%; margin-bottom: 5px; }
             .input-box { width: 100%; }
@@ -93,6 +95,7 @@
             <a class="active" onclick="switchTab(event, 'wifi')">Wi-Fi</a>
             <a onclick="switchTab(event, 'tcp')">TCP</a>
             <a onclick="switchTab(event, 'config')">Thông tin</a>
+            <a onclick="switchTab(event, 'plasma')">Plasma Thawer</a> <!-- TAB MỚI -->
         </div>
         <div class="container">
             <div id="wifi" class="tab-content active">
@@ -114,6 +117,38 @@
                 <div class="info-item"><span class="info-label">🌐 IP:</span><span class="info-value" id="ip-address">N/A</span></div>
                 <div class="info-item"><span class="info-label">🔗 MAC:</span><span class="info-value" id="mac-address">N/A</span></div>
             </div>
+
+            <!-- NỘI DUNG TAB PLASMA THAWER CONFIG -->
+            <div id="plasma" class="tab-content">
+                <form id="plasma-form">
+                    <div class="section-title">Cài Đặt Nhiệt Độ Chung</div>
+                    <div class="row"><div class="label">Set Point T_operator (37)</div><div class="input-box"><input type="number" step="any" id="sp_t_operator" required></div></div>
+                    <div class="row"><div class="label">Set Point T_hot (70~90)</div><div class="input-box"><input type="number" step="any" id="sp_t_hot" required></div></div>
+                    <div class="row"><div class="label">Set Point for Fan</div><div class="input-box"><input type="number" step="any" id="sp_fan" required></div></div>
+                    <div class="row"><div class="label">Nhiệt độ Max</div><div class="input-box"><input type="number" step="any" id="t_max" required></div></div>
+                    <div class="row"><div class="label">Nhiệt độ Min</div><div class="input-box"><input type="number" step="any" id="t_min" required></div></div>
+
+                    <div class="section-title">Cảm Biến T1 & T2</div>
+                    <div class="row"><div class="label">Nhiệt độ Offset T1</div><div class="input-box"><input type="number" step="any" id="t_offset_1" required></div></div>
+                    <div class="row"><div class="label">Điện trở Calibration T1</div><div class="input-box"><input type="number" step="any" id="r_cal_1" required></div></div>
+                    <div class="row"><div class="label">Nhiệt độ Offset T2</div><div class="input-box"><input type="number" step="any" id="t_offset_2" required></div></div>
+                    <div class="row"><div class="label">Điện trở Calibration T2</div><div class="input-box"><input type="number" step="any" id="r_cal_2" required></div></div>
+
+                    <div class="section-title">Cảm Biến T3 & T4</div>
+                    <div class="row"><div class="label">Nhiệt độ Offset T3</div><div class="input-box"><input type="number" step="any" id="t_offset_3" required></div></div>
+                    <div class="row"><div class="label">Điện trở Calibration T3</div><div class="input-box"><input type="number" step="any" id="r_cal_3" required></div></div>
+                    <div class="row"><div class="label">Nhiệt độ Offset T4</div><div class="input-box"><input type="number" step="any" id="t_offset_4" required></div></div>
+                    <div class="row"><div class="label">Điện trở Calibration T4</div><div class="input-box"><input type="number" step="any" id="r_cal_4" required></div></div>
+
+                    <div class="section-title">Thông Số PID</div>
+                    <div class="row"><div class="label">Kp (Tỷ lệ)</div><div class="input-box"><input type="number" step="any" id="pid_kp" required></div></div>
+                    <div class="row"><div class="label">Ti (Tích phân)</div><div class="input-box"><input type="number" step="any" id="pid_ti" required></div></div>
+                    <div class="row"><div class="label">Td (Vi phân)</div><div class="input-box"><input type="number" step="any" id="pid_td" required></div></div>
+
+                    <button type="submit" class="btn btn-orange">💾 Lưu Cấu Hình Plasma</button>
+                </form>
+            </div>
+
         </div>
     </div>
 
@@ -166,7 +201,7 @@
 
         function updateUI(device) {
             if (!device) return;
-            const info = device.info || {}, tcp = device.tcp || {};
+            const info = device.info || {}, tcp = device.tcp || {}, plasma = device.plasma || {};
             const isOnline = (info.status === 'online');
             const stEl = document.getElementById('network-status');
             
@@ -178,31 +213,39 @@
             document.getElementById('wifi-pass').value = (info.wifi && info.wifi.pass) || '';
             document.getElementById('server_ip').value = tcp.server_ip || '';
             document.getElementById('server_port').value = tcp.server_port || '';
+
+            // Cập nhật giao diện cấu hình Plasma Thawer
+            document.getElementById('sp_t_operator').value = plasma.sp_t_operator ?? '';
+            document.getElementById('sp_t_hot').value = plasma.sp_t_hot ?? '';
+            document.getElementById('sp_fan').value = plasma.sp_fan ?? '';
+            document.getElementById('t_max').value = plasma.t_max ?? '';
+            document.getElementById('t_min').value = plasma.t_min ?? '';
+            document.getElementById('t_offset_1').value = plasma.t_offset_1 ?? '';
+            document.getElementById('r_cal_1').value = plasma.r_cal_1 ?? '';
+            document.getElementById('t_offset_2').value = plasma.t_offset_2 ?? '';
+            document.getElementById('r_cal_2').value = plasma.r_cal_2 ?? '';
+            document.getElementById('t_offset_3').value = plasma.t_offset_3 ?? '';
+            document.getElementById('r_cal_3').value = plasma.r_cal_3 ?? '';
+            document.getElementById('t_offset_4').value = plasma.t_offset_4 ?? '';
+            document.getElementById('r_cal_4').value = plasma.r_cal_4 ?? '';
+            document.getElementById('pid_kp').value = plasma.pid_kp ?? '';
+            document.getElementById('pid_ti').value = plasma.pid_ti ?? '';
+            document.getElementById('pid_td').value = plasma.pid_td ?? '';
         }
 
-        // ==========================================
-        // THUẬT TOÁN GLOBAL PING (BROADCAST) MỚI
-        // ==========================================
         function broadcastPing() {
             const btn = document.getElementById('btn-check-device-status');
             btn.disabled = true;
             btn.textContent = "⏳ Đang phát sóng...";
 
             const currentPing = Date.now();
-
-            // 1. Ghi đúng 1 lệnh duy nhất ra thư mục gốc
             db.ref('esp32/global_command/ping').set(currentPing);
 
-            // 2. Đợi 3 giây để các ESP32 tự cập nhật 'pong' của chúng
             setTimeout(() => {
                 const updates = {};
-                
-                // 3. Quét qua Cache cục bộ trên trình duyệt (đã được on('value') update ngầm)
                 Object.keys(devicesDataCache).forEach(deviceId => {
                     const device = devicesDataCache[deviceId];
                     const pongValue = (device.info && device.info.pong) ? device.info.pong : 0;
-                    
-                    // So sánh: Nếu ESP32 nào có pong trùng khớp -> Nó đang sống
                     if (pongValue === currentPing) {
                         updates[`${deviceId}/info/status`] = 'online';
                     } else {
@@ -210,7 +253,6 @@
                     }
                 });
 
-                // 4. Batch Update - Gửi cập nhật trạng thái của CẢ 20 THIẾT BỊ trong đúng 1 lệnh Ghi
                 if (Object.keys(updates).length > 0) {
                     db.ref('esp32/devices').update(updates).then(() => {
                         btn.disabled = false;
@@ -220,13 +262,9 @@
                     btn.disabled = false;
                     btn.textContent = "⚡ Quét Trạng Thái (Global Ping)";
                 }
-
-            }, 3000); // Thời gian chờ (có thể chỉnh xuống 2000ms nếu mạng mượt)
+            }, 3000);
         }
 
-        // ==========================================
-        // LẮNG NGHE DATA REALTIME TỪ FIREBASE
-        // ==========================================
         document.addEventListener('DOMContentLoaded', () => {
             db.ref('esp32/devices').on('value', (snap) => {
                 devicesDataCache = snap.val() || {};
@@ -239,7 +277,7 @@
                 db.ref(`esp32/devices/${selectedDeviceId}/info/wifi`).set({
                     ssid: document.getElementById('ssid').value,
                     pass: document.getElementById('wifi-pass').value
-                }).then(() => alert("✅ Đã lưu!"));
+                }).then(() => alert("✅ Đã lưu Wi-Fi!"));
             };
 
             document.getElementById('tcp-form').onsubmit = (e) => {
@@ -247,7 +285,38 @@
                 db.ref(`esp32/devices/${selectedDeviceId}/tcp`).set({
                     server_ip: document.getElementById('server_ip').value,
                     server_port: parseInt(document.getElementById('server_port').value)
-                }).then(() => alert("✅ Đã lưu!"));
+                }).then(() => alert("✅ Đã lưu TCP!"));
+            };
+
+            // Hàm lưu cho Tab Plasma Thawer
+            document.getElementById('plasma-form').onsubmit = (e) => {
+                e.preventDefault();
+                
+                // ParseFloat dùng để đảm bảo dữ liệu gửi lên Firebase là Dạng Số (hỗ trợ cả số thập phân)
+                const plasmaData = {
+                    sp_t_operator: parseFloat(document.getElementById('sp_t_operator').value),
+                    sp_t_hot: parseFloat(document.getElementById('sp_t_hot').value),
+                    sp_fan: parseFloat(document.getElementById('sp_fan').value),
+                    t_max: parseFloat(document.getElementById('t_max').value),
+                    t_min: parseFloat(document.getElementById('t_min').value),
+                    
+                    t_offset_1: parseFloat(document.getElementById('t_offset_1').value),
+                    r_cal_1: parseFloat(document.getElementById('r_cal_1').value),
+                    t_offset_2: parseFloat(document.getElementById('t_offset_2').value),
+                    r_cal_2: parseFloat(document.getElementById('r_cal_2').value),
+                    
+                    t_offset_3: parseFloat(document.getElementById('t_offset_3').value),
+                    r_cal_3: parseFloat(document.getElementById('r_cal_3').value),
+                    t_offset_4: parseFloat(document.getElementById('t_offset_4').value),
+                    r_cal_4: parseFloat(document.getElementById('r_cal_4').value),
+                    
+                    pid_kp: parseFloat(document.getElementById('pid_kp').value),
+                    pid_ti: parseFloat(document.getElementById('pid_ti').value),
+                    pid_td: parseFloat(document.getElementById('pid_td').value)
+                };
+
+                db.ref(`esp32/devices/${selectedDeviceId}/plasma`).set(plasmaData)
+                    .then(() => alert("✅ Đã lưu Cấu hình Plasma Thawer thành công!"));
             };
         });
     </script>
