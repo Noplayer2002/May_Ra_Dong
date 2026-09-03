@@ -55,8 +55,7 @@
         .label { width: 220px; font-weight: bold; color: #555; font-size: 14px;} 
         .input-box { flex: 1; }
         input[type='text'], input[type='number'], input[type='password'] { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 3px; font-size: 14px; }
-        .btn { display: block; width: 100%; margin-top: 15px; padding: 12px; background: #4CAF50; color: white; border: none; font-size: 16px; cursor: pointer; border-radius: 4px; font-weight: bold; transition: 0.2s; }
-        .btn:hover { opacity: 0.9; }
+        .btn { display: block; width: 100%; margin-top: 15px; padding: 12px; background: #4CAF50; color: white; border: none; font-size: 16px; cursor: pointer; border-radius: 4px; font-weight: bold; }
         .btn-orange { background: #ff9800; }
         .btn-blue { background: #2196F3; }
         .btn-secondary { background: #757575; padding: 8px 12px; font-size: 14px; width: auto; margin: 0; }
@@ -67,12 +66,11 @@
 
         .section-title { margin-top: 20px; font-size: 16px; font-weight: bold; color: #9ab474; border-bottom: 2px solid #eee; padding-bottom: 5px; }
 
-        /* CSS MỚI: DANH SÁCH MẠNG WIFI QUÉT ĐƯỢC */
         .wifi-list-box { margin: 15px 0; border: 1px solid #e0e0e0; border-radius: 6px; max-height: 180px; overflow-y: auto; background: #fafafa; }
-        .wifi-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-bottom: 1px solid #eee; cursor: pointer; transition: 0.2s; font-size: 14px; }
+        .wifi-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 14px; }
         .wifi-item:hover { background: #e8f5e9; }
         .wifi-item:last-child { border-bottom: none; }
-        .wifi-ssid { font-weight: 600; color: #333; display: flex; align-items: center; gap: 6px; }
+        .wifi-ssid { font-weight: 600; color: #333; }
         .wifi-signal { font-size: 12px; font-weight: bold; padding: 2px 6px; border-radius: 4px; }
         .sig-good { color: #2e7d32; background: #e8f5e9; }
         .sig-medium { color: #ef6c00; background: #fff3e0; }
@@ -110,19 +108,18 @@
             <a onclick="switchTab(event, 'plasma')">Plasma Thawer</a>
         </div>
         <div class="container">
-            <!-- TAB WIFI: ĐÃ TÍCH HỢP TÍNH NĂNG QUÉT WIFI -->
             <div id="wifi" class="tab-content active">
-                <button type="button" class="btn btn-blue" id="btn-scan-wifi" onclick="triggerWifiScan()" style="margin-top: 0; margin-bottom: 15px;">🔍 Quét Wi-Fi Xung Quanh</button>
+                <button type="button" class="btn btn-blue" id="btn-scan-wifi" onclick="triggerWifiScan()" style="margin-top:0; margin-bottom:15px;">🔍 Quét Wi-Fi Xung Quanh</button>
                 
-                <div class="label" style="width: 100%; margin-bottom: 5px;">Mạng Wi-Fi tìm thấy (Click để chọn):</div>
+                <div class="label" style="width: 100%; margin-bottom: 5px;">Mạng Wi-Fi quét được (Click để chọn):</div>
                 <div id="scanned-wifi-list" class="wifi-list-box">
-                    <div style="color:#999; font-size:13px; text-align:center; padding:15px;">Chưa có dữ liệu. Bấm nút Quét để tìm mạng!</div>
+                    <div style="color:#999; font-size:13px; text-align:center; padding:15px;">Chưa có dữ liệu. Bấm "Quét Wi-Fi" để tìm mạng!</div>
                 </div>
 
                 <form id="wifi-connect-form">
-                    <div class="row"><div class="label">SSID</div><div class="input-box"><input type="text" id="ssid" required placeholder="Tên mạng Wi-Fi"></div></div>
-                    <div class="row"><div class="label">Mật khẩu</div><div class="input-box"><input type="password" id="wifi-pass" placeholder="Nhập mật khẩu Wi-Fi"></div></div>
-                    <button type="submit" class="btn">💾 Lưu Wi-Fi Cho Thiết Bị</button>
+                    <div class="row"><div class="label">SSID (Tên mạng)</div><div class="input-box"><input type="text" id="ssid" required placeholder="Tên Wi-Fi"></div></div>
+                    <div class="row"><div class="label">Mật khẩu</div><div class="input-box"><input type="password" id="wifi-pass" placeholder="Mật khẩu Wi-Fi"></div></div>
+                    <button type="submit" class="btn">💾 Lưu & Đổi Mạng Cho Thiết Bị</button>
                 </form>
             </div>
 
@@ -240,27 +237,22 @@
             e.target.classList.add('active');
         }
 
-        /* =========================================================
-           HÀM XỬ LÝ QUÉT WIFI & CHỌN MẠNG
-           ========================================================= */
         function triggerWifiScan() {
             if (!selectedDeviceId) return;
             const btn = document.getElementById('btn-scan-wifi');
             btn.disabled = true;
-            btn.textContent = "⏳ Đang quét Wi-Fi xung quanh...";
+            btn.textContent = "⏳ Đang quét Wi-Fi...";
             isScanningWifi = true;
 
-            // Đặt lệnh scan_wifi = true lên Firebase
             db.ref(`esp32/devices/${selectedDeviceId}/command/scan_wifi`).set(true);
 
-            // Timeout an toàn phòng khi thiết bị mất mạng
             setTimeout(() => {
                 if (isScanningWifi) {
                     isScanningWifi = false;
                     btn.disabled = false;
                     btn.textContent = "🔍 Quét Wi-Fi Xung Quanh";
                 }
-            }, 7000);
+            }, 8000);
         }
 
         function selectWifiSSID(ssid) {
@@ -271,7 +263,7 @@
         function renderWifiList(wifiList) {
             const listEl = document.getElementById('scanned-wifi-list');
             if (!wifiList || wifiList.length === 0) {
-                listEl.innerHTML = '<div style="color:#999; font-size:13px; text-align:center; padding:15px;">Không có mạng Wi-Fi nào. Hãy nhấn "Quét Wi-Fi"!</div>';
+                listEl.innerHTML = '<div style="color:#999; font-size:13px; text-align:center; padding:15px;">Không tìm thấy mạng nào. Bấm "Quét Wi-Fi"!</div>';
                 return;
             }
 
@@ -292,7 +284,7 @@
 
         function updateUI(device) {
             if (!device) return;
-            const info = device.info || {}, tcp = device.tcp || {}, plasma = device.plasma || {};
+            const info = device.info || {}, tcp = device.tcp || {}, plasma = device.plasma || {}, wifi = device.wifi || {};
             const isOnline = (info.status === 'online');
             const stEl = document.getElementById('network-status');
             
@@ -306,22 +298,21 @@
             if (info.pin !== undefined && info.pin !== null) {
                 let raw = parseFloat(info.pin);
                 let voltage = (raw > 50.0) ? (raw / 100.0) : raw;
-                let percent = getBatteryPercentage(voltage);
-                batteryText = `${percent}% (${voltage.toFixed(2)} V)`;
+                batteryText = `${getBatteryPercentage(voltage)}% (${voltage.toFixed(2)} V)`;
             }
             document.getElementById('battery-level').textContent = batteryText;
             
-            document.getElementById('ssid').value = (info.wifi && info.wifi.ssid) || info.ssid || '';
-            document.getElementById('wifi-pass').value = (info.wifi && info.wifi.pass) || '';
+            // 🟢 LẤY ĐẦY ĐỦ SSID VÀ PASSWORD TỪ NHÁNH WIFI
+            document.getElementById('ssid').value = wifi.ssid || info.ssid || '';
+            document.getElementById('wifi-pass').value = wifi.pass || '';
+
             document.getElementById('server_ip').value = tcp.server_ip || '';
             document.getElementById('server_port').value = tcp.server_port || '';
 
-            // Cập nhật danh sách Wi-Fi quét được
             if (device.wifi_list) {
                 renderWifiList(device.wifi_list);
             }
 
-            // Nếu cờ scan_wifi đã tắt (ESP32 đã quét xong) thì mở lại nút bấm
             const scanCommand = device.command && device.command.scan_wifi;
             if (isScanningWifi && scanCommand === false) {
                 isScanningWifi = false;
@@ -388,12 +379,16 @@
                 if(selectedDeviceId && devicesDataCache[selectedDeviceId]) updateUI(devicesDataCache[selectedDeviceId]);
             });
 
+            // 🟢 LƯU VÀO ĐÚNG NHÁNH /wifi TRÊN FIREBASE
             document.getElementById('wifi-connect-form').onsubmit = (e) => {
                 e.preventDefault();
-                db.ref(`esp32/devices/${selectedDeviceId}/info/wifi`).set({
-                    ssid: document.getElementById('ssid').value,
-                    pass: document.getElementById('wifi-pass').value
-                }).then(() => alert("✅ Đã lưu Wi-Fi!"));
+                const ssidVal = document.getElementById('ssid').value;
+                const passVal = document.getElementById('wifi-pass').value;
+
+                db.ref(`esp32/devices/${selectedDeviceId}/wifi`).set({
+                    ssid: ssidVal,
+                    pass: passVal
+                }).then(() => alert("✅ Đã gửi lệnh lưu Wi-Fi! ESP32 đang chuyển sang mạng mới..."));
             };
 
             document.getElementById('tcp-form').onsubmit = (e) => {
