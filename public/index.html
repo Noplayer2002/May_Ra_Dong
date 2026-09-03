@@ -162,7 +162,7 @@
         // HÀM QUY ĐỔI ĐIỆN ÁP SANG % (Dựa theo bảng)
         // ==========================================
         function getBatteryPercentage(voltage) {
-            // Các điểm mốc nội suy trích xuất từ bảng của bạn
+            // Bảng quy đổi chuẩn theo Vôn (12V Lead-Acid / 3S LiPo)
             const curve = [
                 { v: 12.15, p: 100 },
                 { v: 11.85, p: 90 },
@@ -177,18 +177,16 @@
                 { v: 10.10, p: 5 },
                 { v: 9.60,  p: 0 }
             ];
-
-            // Vượt ngưỡng 100% hoặc cạn 0%
+        
             if (voltage >= curve[0].v) return 100;
             if (voltage <= curve[curve.length - 1].v) return 0;
-
-            // Nội suy tuyến tính tìm số % tương ứng cho các mức ở giữa
+        
             for (let i = 0; i < curve.length - 1; i++) {
                 if (voltage <= curve[i].v && voltage >= curve[i + 1].v) {
                     let v_max = curve[i].v;
-                    let v_min = curve[i+1].v;
+                    let v_min = curve[i + 1].v;
                     let p_max = curve[i].p;
-                    let p_min = curve[i+1].p;
+                    let p_min = curve[i + 1].p;
                     
                     let percent = p_min + ((voltage - v_min) / (v_max - v_min)) * (p_max - p_min);
                     return Math.round(percent);
@@ -196,7 +194,6 @@
             }
             return 0;
         }
-
         function showPage(pageName) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById(pageName).classList.add('active');
@@ -254,17 +251,25 @@
             // XỬ LÝ HIỂN THỊ PIN & ĐIỆN ÁP
             let batteryText = 'N/A';
             if (info.pin !== undefined && info.pin !== null) {
-                let val = parseFloat(info.pin);
-                if (val <= 15.0) { 
-                    // Nếu ESP32 gửi lên số điện áp Vôn (ví dụ 11.85)
-                    let percent = getBatteryPercentage(val);
-                    // Hiển thị dạng: "90% (11.85 V)"
-                    batteryText = `${percent}%  (${val.toFixed(2)} V)`; 
+                let raw = parseFloat(info.pin);
+                let voltage = 0;
+            
+                // Tự động nhận diện dữ liệu ESP32 gửi lên:
+                if (raw > 50.0) {
+                    // Nếu ESP32 gửi giá trị dạng nguyên như 1185 hay 1215 (tức 11.85V * 100)
+                    voltage = raw / 100.0;
                 } else {
-                    // Nếu ESP tự quy đổi ra số % và gửi lên (ví dụ 90)
-                    batteryText = `${val}%`;
+                    // Nếu ESP32 gửi thẳng số Vôn (ví dụ 11.85)
+                    voltage = raw;
                 }
+            
+                // Tính % từ điện áp thực tế
+                let percent = getBatteryPercentage(voltage);
+                
+                // Luôn hiển thị đầy đủ: cả % dung lượng và số Vôn thực tế
+                batteryText = `${percent}% (${voltage.toFixed(2)} V)`;
             }
+            document.getElementById('battery-level').textContent = batteryText;
             document.getElementById('battery-level').textContent = batteryText;
             
             document.getElementById('ssid').value = (info.wifi && info.wifi.ssid) || info.ssid || '';
