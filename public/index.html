@@ -179,7 +179,7 @@
                 </form>
             </div>
 
-            <!-- TAB XỬ LÝ BẢN GHI HL7 -->
+            <!-- TAB XỬ LÝ BẢN GHI HL7 (NHÁNH HISTORY) -->
             <div id="records" class="tab-content">
                 <div class="row" style="border:none; padding-bottom: 5px;">
                     <div class="label" style="width: 140px;">Chọn bản tin:</div>
@@ -191,7 +191,7 @@
                 </div>
 
                 <div id="record-empty-state" style="text-align: center; color: #888; padding: 30px 10px;">
-                    Chưa có bản ghi nào cho thiết bị này hoặc vui lòng chọn một bản tin phía trên.
+                    Không tìm thấy bản ghi trong nhánh <code>history</code> của thiết bị này.
                 </div>
 
                 <div id="record-detail-view" style="display: none;">
@@ -353,7 +353,6 @@
 
         function parseHL7String(raw) {
             if (!raw) return null;
-            // Chuẩn hóa ngắt dòng nếu các trường dính liền
             let normalized = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
             normalized = normalized.replace(/(MSH|PID|OBR|NTE|OBX)\|/g, '\n$1|').trim();
             const lines = normalized.split('\n').map(l => l.trim()).filter(l => l.length > 0);
@@ -396,18 +395,21 @@
             return { parsed: result, raw: normalized };
         }
 
+        // 🟢 ĐỌC DỮ LIỆU TỪ NHÁNH /history CỦA THIẾT BỊ
         function renderHL7RecordsDropdown(device) {
             const selectEl = document.getElementById('record-select');
             const prevSelected = selectEl.value;
             selectEl.innerHTML = '<option value="">-- Chọn mã bản tin --</option>';
             currentDeviceRecords = {};
 
-            const reservedKeys = ['info', 'tcp', 'wifi', 'wifi_list', 'command', 'plasma'];
+            const historyNode = device.history || {};
+            // Sắp xếp mã bản tin giảm dần (mới nhất lên đầu)
+            const keys = Object.keys(historyNode).sort().reverse();
             let count = 0;
 
-            Object.keys(device).forEach(key => {
-                if (!reservedKeys.includes(key) && device[key] && device[key].raw_hl7) {
-                    currentDeviceRecords[key] = device[key].raw_hl7;
+            keys.forEach(key => {
+                if (historyNode[key] && historyNode[key].raw_hl7) {
+                    currentDeviceRecords[key] = historyNode[key].raw_hl7;
                     const opt = document.createElement('option');
                     opt.value = key;
                     opt.textContent = `📋 ${key}`;
@@ -421,8 +423,7 @@
                     selectEl.value = prevSelected;
                     displayHL7Detail(currentDeviceRecords[prevSelected]);
                 } else {
-                    // Mặc định chọn bản ghi đầu tiên
-                    const firstKey = Object.keys(currentDeviceRecords)[0];
+                    const firstKey = keys.find(k => currentDeviceRecords[k]);
                     selectEl.value = firstKey;
                     displayHL7Detail(currentDeviceRecords[firstKey]);
                 }
@@ -521,7 +522,7 @@
             }
             document.getElementById('battery-level').textContent = batteryText;
             
-            // Đọc SSID và PASS
+            // Wi-Fi
             document.getElementById('ssid').value = wifi.ssid || info.ssid || '';
             document.getElementById('wifi-pass').value = wifi.pass || '';
 
@@ -540,7 +541,7 @@
                 btn.textContent = "🔍 Quét Wi-Fi Xung Quanh";
             }
 
-            // Cập nhật cấu hình Plasma
+            // Cấu hình Plasma
             document.getElementById('sp_t_operator').value = plasma.sp_t_operator ?? '';
             document.getElementById('sp_t_hot').value = plasma.sp_t_hot ?? '';
             document.getElementById('sp_fan').value = plasma.sp_fan ?? '';
@@ -558,7 +559,7 @@
             document.getElementById('pid_ti').value = plasma.pid_ti ?? '';
             document.getElementById('pid_td').value = plasma.pid_td ?? '';
 
-            // Cập nhật tab Bản ghi HL7
+            // Cập nhật Tab Bản ghi HL7 từ nhánh history
             renderHL7RecordsDropdown(device);
         }
 
