@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ESP32 Settings</title>
+    <title>ESP32 Settings & HL7 Records</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
     <script>
@@ -29,7 +29,7 @@
         .nav a:hover { background: #d5d5d5; }
         .nav a.active { background: #fff; color: #9ab474; border-top: 3px solid #9ab474; border-bottom: 2px solid #fff; margin-bottom: -2px; }
         .action-bar { padding: 12px 20px; display: flex; gap: 10px; justify-content: center; }
-        .container { max-width: 600px; margin: 20px auto; background: #fff; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); padding: 20px; }
+        .container { max-width: 650px; margin: 20px auto; background: #fff; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); padding: 20px; }
         .page { display: none; }
         .page.active { display: block; }
         .tab-content { display: none; }
@@ -54,7 +54,7 @@
         .row:last-child { border-bottom: none; }
         .label { width: 220px; font-weight: bold; color: #555; font-size: 14px;} 
         .input-box { flex: 1; }
-        input[type='text'], input[type='number'], input[type='password'] { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 3px; font-size: 14px; }
+        input[type='text'], input[type='number'], input[type='password'], select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 3px; font-size: 14px; background: #fff; }
         .btn { display: block; width: 100%; margin-top: 15px; padding: 12px; background: #4CAF50; color: white; border: none; font-size: 16px; cursor: pointer; border-radius: 4px; font-weight: bold; }
         .btn-orange { background: #ff9800; }
         .btn-blue { background: #2196F3; }
@@ -75,6 +75,16 @@
         .sig-good { color: #2e7d32; background: #e8f5e9; }
         .sig-medium { color: #ef6c00; background: #fff3e0; }
         .sig-weak { color: #c62828; background: #ffebee; }
+
+        /* Styles cho Tab Bản Ghi HL7 */
+        .record-card { background: #f9fbf7; border: 1px solid #dce7d0; border-radius: 6px; padding: 12px; margin-top: 15px; }
+        .zone-box { background: #fff; border: 1px solid #e0e0e0; border-left: 4px solid #9ab474; padding: 8px 12px; margin-bottom: 8px; border-radius: 4px; font-size: 13px; }
+        .zone-pass { border-left-color: #4CAF50; }
+        .zone-fail { border-left-color: #f44336; }
+        .hl7-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; background: #fff; }
+        .hl7-table th, .hl7-table td { border: 1px solid #eee; padding: 7px 10px; text-align: left; }
+        .hl7-table th { background: #f1f8e9; color: #333; font-weight: bold; }
+        .raw-box { background: #263238; color: #80cbc4; font-family: monospace; font-size: 11px; padding: 10px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; margin-top: 8px; max-height: 180px; }
 
         @media (max-width: 600px) {
             .container { margin: 10px; padding: 15px; }
@@ -106,6 +116,7 @@
             <a onclick="switchTab(event, 'tcp')">TCP</a>
             <a onclick="switchTab(event, 'config')">Thông tin</a>
             <a onclick="switchTab(event, 'plasma')">Plasma Thawer</a>
+            <a onclick="switchTab(event, 'records')">📑 Bản ghi (HL7)</a>
         </div>
         <div class="container">
             <div id="wifi" class="tab-content active">
@@ -167,6 +178,52 @@
                     <button type="submit" class="btn btn-orange">💾 Lưu Cấu Hình Plasma</button>
                 </form>
             </div>
+
+            <!-- TAB XỬ LÝ BẢN GHI HL7 -->
+            <div id="records" class="tab-content">
+                <div class="row" style="border:none; padding-bottom: 5px;">
+                    <div class="label" style="width: 140px;">Chọn bản tin:</div>
+                    <div class="input-box">
+                        <select id="record-select" onchange="onSelectRecordChange()">
+                            <option value="">-- Chọn mã bản tin --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="record-empty-state" style="text-align: center; color: #888; padding: 30px 10px;">
+                    Chưa có bản ghi nào cho thiết bị này hoặc vui lòng chọn một bản tin phía trên.
+                </div>
+
+                <div id="record-detail-view" style="display: none;">
+                    <div class="record-card">
+                        <div class="info-item"><span class="info-label">🔖 Mã bản tin:</span><span class="info-value" id="hl7-msg-id">-</span></div>
+                        <div class="info-item"><span class="info-label">📦 Mã mẻ (Batch ID):</span><span class="info-value" id="hl7-batch-id">-</span></div>
+                        <div class="info-item"><span class="info-label">🕒 Thời gian HL7:</span><span class="info-value" id="hl7-timestamp">-</span></div>
+                        <div class="info-item"><span class="info-label">🏥 Thiết bị / Nơi gửi:</span><span class="info-value" id="hl7-sender">-</span></div>
+                    </div>
+
+                    <div class="section-title">Thông Số Zone Giã Đông (NTE)</div>
+                    <div id="hl7-zones" style="margin-top: 10px;"></div>
+
+                    <div class="section-title">Danh Sách Túi Huyết Tương (OBX: 1 - 16)</div>
+                    <table class="hl7-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">Vị trí</th>
+                                <th>Mã Barcode / Túi máu</th>
+                                <th style="width: 70px; text-align: center;">Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody id="hl7-bags-body"></tbody>
+                    </table>
+
+                    <div class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>Dữ Liệu Thô (raw_hl7)</span>
+                        <button type="button" class="btn-secondary" style="font-size: 11px; padding: 4px 8px;" onclick="copyRawHL7()">📋 Sao chép</button>
+                    </div>
+                    <pre class="raw-box" id="hl7-raw-content"></pre>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -174,6 +231,7 @@
         let devicesDataCache = {};
         let selectedDeviceId = null;
         let isScanningWifi = false;
+        let currentDeviceRecords = {};
 
         function getBatteryPercentage(voltage) {
             const curve = [
@@ -282,6 +340,167 @@
             listEl.innerHTML = html;
         }
 
+        // ==================== BỘ XỬ LÝ VÀ PHÂN GIẢI BẢN GHI HL7 ====================
+        function formatHL7Date(str) {
+            if (!str || str.length < 8) return str || 'N/A';
+            const y = str.substr(0, 4), m = str.substr(4, 2), d = str.substr(6, 2);
+            let time = '';
+            if (str.length >= 14) {
+                time = ' ' + str.substr(8, 2) + ':' + str.substr(10, 2) + ':' + str.substr(12, 2);
+            }
+            return `${d}/${m}/${y}${time}`;
+        }
+
+        function parseHL7String(raw) {
+            if (!raw) return null;
+            // Chuẩn hóa ngắt dòng nếu các trường dính liền
+            let normalized = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+            normalized = normalized.replace(/(MSH|PID|OBR|NTE|OBX)\|/g, '\n$1|').trim();
+            const lines = normalized.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+            const result = {
+                msh: {},
+                pid: {},
+                notes: [],
+                obxList: []
+            };
+
+            lines.forEach(line => {
+                const parts = line.split('|');
+                const seg = parts[0];
+                if (seg === 'MSH') {
+                    result.msh = {
+                        sender: parts[2] || '',
+                        facility: parts[3] || '',
+                        timestamp: parts[6] || '',
+                        msgType: parts[8] || '',
+                        msgId: parts[9] || ''
+                    };
+                } else if (seg === 'PID') {
+                    result.pid = {
+                        batchId: parts[3] || '',
+                        batchType: parts[5] || ''
+                    };
+                } else if (seg === 'NTE') {
+                    result.notes.push(parts[3] || '');
+                } else if (seg === 'OBX') {
+                    result.obxList.push({
+                        seq: parts[1] || '',
+                        bagIndex: parts[3] || '',
+                        barcode: parts[5] || '',
+                        status: parts[11] || 'F'
+                    });
+                }
+            });
+
+            return { parsed: result, raw: normalized };
+        }
+
+        function renderHL7RecordsDropdown(device) {
+            const selectEl = document.getElementById('record-select');
+            const prevSelected = selectEl.value;
+            selectEl.innerHTML = '<option value="">-- Chọn mã bản tin --</option>';
+            currentDeviceRecords = {};
+
+            const reservedKeys = ['info', 'tcp', 'wifi', 'wifi_list', 'command', 'plasma'];
+            let count = 0;
+
+            Object.keys(device).forEach(key => {
+                if (!reservedKeys.includes(key) && device[key] && device[key].raw_hl7) {
+                    currentDeviceRecords[key] = device[key].raw_hl7;
+                    const opt = document.createElement('option');
+                    opt.value = key;
+                    opt.textContent = `📋 ${key}`;
+                    selectEl.appendChild(opt);
+                    count++;
+                }
+            });
+
+            if (count > 0) {
+                if (prevSelected && currentDeviceRecords[prevSelected]) {
+                    selectEl.value = prevSelected;
+                    displayHL7Detail(currentDeviceRecords[prevSelected]);
+                } else {
+                    // Mặc định chọn bản ghi đầu tiên
+                    const firstKey = Object.keys(currentDeviceRecords)[0];
+                    selectEl.value = firstKey;
+                    displayHL7Detail(currentDeviceRecords[firstKey]);
+                }
+            } else {
+                document.getElementById('record-empty-state').style.display = 'block';
+                document.getElementById('record-detail-view').style.display = 'none';
+            }
+        }
+
+        function onSelectRecordChange() {
+            const key = document.getElementById('record-select').value;
+            if (key && currentDeviceRecords[key]) {
+                displayHL7Detail(currentDeviceRecords[key]);
+            } else {
+                document.getElementById('record-empty-state').style.display = 'block';
+                document.getElementById('record-detail-view').style.display = 'none';
+            }
+        }
+
+        function displayHL7Detail(rawString) {
+            const data = parseHL7String(rawString);
+            if (!data) return;
+
+            document.getElementById('record-empty-state').style.display = 'none';
+            document.getElementById('record-detail-view').style.display = 'block';
+
+            const msh = data.parsed.msh;
+            const pid = data.parsed.pid;
+
+            document.getElementById('hl7-msg-id').textContent = msh.msgId || document.getElementById('record-select').value;
+            document.getElementById('hl7-batch-id').textContent = pid.batchId || 'N/A';
+            document.getElementById('hl7-timestamp').textContent = formatHL7Date(msh.timestamp);
+            document.getElementById('hl7-sender').textContent = `${msh.sender || 'N/A'} (${msh.facility || 'N/A'})`;
+
+            // Hiển thị Zone (NTE)
+            const zoneContainer = document.getElementById('hl7-zones');
+            zoneContainer.innerHTML = '';
+            if (data.parsed.notes.length === 0) {
+                zoneContainer.innerHTML = '<div style="color:#999; font-size:13px;">Không có ghi chú nhiệt độ zone.</div>';
+            } else {
+                data.parsed.notes.forEach(note => {
+                    const isPass = note.includes('PASSED');
+                    const div = document.createElement('div');
+                    div.className = `zone-box ${isPass ? 'zone-pass' : 'zone-fail'}`;
+                    div.innerHTML = `<strong>${isPass ? '✅' : '⚠️'}</strong> ${note}`;
+                    zoneContainer.appendChild(div);
+                });
+            }
+
+            // Hiển thị danh sách túi máu (OBX)
+            const bagsTbody = document.getElementById('hl7-bags-body');
+            bagsTbody.innerHTML = '';
+            if (data.parsed.obxList.length === 0) {
+                bagsTbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#999;">Không có thông tin túi.</td></tr>';
+            } else {
+                data.parsed.obxList.forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style="text-align:center; font-weight:bold; color:#555;">${item.bagIndex || item.seq}</td>
+                        <td style="font-family:monospace; font-weight:bold; color:#1565c0;">${item.barcode || 'N/A'}</td>
+                        <td style="text-align:center;"><span style="color:#2e7d32; font-weight:bold;">${item.status}</span></td>
+                    `;
+                    bagsTbody.appendChild(tr);
+                });
+            }
+
+            // Raw HL7
+            document.getElementById('hl7-raw-content').textContent = data.raw;
+        }
+
+        function copyRawHL7() {
+            const raw = document.getElementById('hl7-raw-content').textContent;
+            if (!raw) return;
+            navigator.clipboard.writeText(raw).then(() => {
+                alert("📋 Đã sao chép bản tin HL7 vào clipboard!");
+            });
+        }
+
         function updateUI(device) {
             if (!device) return;
             const info = device.info || {}, tcp = device.tcp || {}, plasma = device.plasma || {}, wifi = device.wifi || {};
@@ -302,7 +521,7 @@
             }
             document.getElementById('battery-level').textContent = batteryText;
             
-            // 🟢 LẤY ĐẦY ĐỦ SSID VÀ PASSWORD TỪ NHÁNH WIFI
+            // Đọc SSID và PASS
             document.getElementById('ssid').value = wifi.ssid || info.ssid || '';
             document.getElementById('wifi-pass').value = wifi.pass || '';
 
@@ -321,7 +540,7 @@
                 btn.textContent = "🔍 Quét Wi-Fi Xung Quanh";
             }
 
-            // Cập nhật Plasma
+            // Cập nhật cấu hình Plasma
             document.getElementById('sp_t_operator').value = plasma.sp_t_operator ?? '';
             document.getElementById('sp_t_hot').value = plasma.sp_t_hot ?? '';
             document.getElementById('sp_fan').value = plasma.sp_fan ?? '';
@@ -338,6 +557,9 @@
             document.getElementById('pid_kp').value = plasma.pid_kp ?? '';
             document.getElementById('pid_ti').value = plasma.pid_ti ?? '';
             document.getElementById('pid_td').value = plasma.pid_td ?? '';
+
+            // Cập nhật tab Bản ghi HL7
+            renderHL7RecordsDropdown(device);
         }
 
         function broadcastPing() {
@@ -379,7 +601,6 @@
                 if(selectedDeviceId && devicesDataCache[selectedDeviceId]) updateUI(devicesDataCache[selectedDeviceId]);
             });
 
-            // 🟢 LƯU VÀO ĐÚNG NHÁNH /wifi TRÊN FIREBASE
             document.getElementById('wifi-connect-form').onsubmit = (e) => {
                 e.preventDefault();
                 const ssidVal = document.getElementById('ssid').value;
