@@ -21,35 +21,50 @@ export const DeviceService = {
         return db.ref(`esp32/devices/${deviceId}/plasma`).set(plasmaData);
     },
 
-    async broadcastPing() {
+    // deviceService.js
+
+async broadcastPing() {
     const currentPing = Date.now().toString();
-    // 1. Gửi lệnh Ping
+    
+    // 1. Gửi lệnh ping lên Firebase
     await db.ref('esp32/global_command/ping').set(currentPing);
 
     return new Promise((resolve) => {
         setTimeout(async () => {
-            // 2. LẤY DỮ LIỆU MỚI NHẤT VỪA CẬP NHẬT TRÊN FIREBASE (Không dùng cache cũ)
+            // 2. Kéo dữ liệu thực tế tại thời điểm sau 3 giây từ Firebase về
             const snap = await db.ref('esp32/devices').once('value');
             const devices = snap.val() || {};
-            
             const updates = {};
 
             Object.keys(devices).forEach(deviceId => {
                 const dev = devices[deviceId];
-                const pong = dev?.info?.pong?.toString() || '';
+                const info = dev?.info || {};
 
-                // 3. Nếu pong khớp -> Giữ nguyên (hoặc set online), nếu KHÔNG khớp mới set offline
-                if (pong !== currentPing) {
+                const currentStatus = (info.status || '').toLowerCase();
+                const pongValue = (info.pong || '').toString().trim();
+
+                // KIỂM TRA THỰC TẾ:
+                // Thiết bị được coi là CÒN SỐNG nếu:
+                // - ESP32 đã trả về pong khớp mã
+                // - HOẶC trạng thái của nó đang là 'online' hoặc 'running'
+                const isAlive = (pongValue === currentPing) || 
+                                (currentStatus === 'online') || 
+                                (currentStatus === 'running');
+
+                if (!isAlive) {
+                    // Chỉ những thiết bị THỰC SỰ im lặng mới bị gán offline
                     updates[`${deviceId}/info/status`] = 'offline';
                 }
             });
 
-            // 4. Cập nhật
+            // 3. Ghi đè trạng thái offline cho các máy không phản hồi
             if (Object.keys(updates).length > 0) {
                 await db.ref('esp32/devices').update(updates);
             }
+
             resolve();
         }, 3000);
     });
+}
 }
 };
