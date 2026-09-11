@@ -4,119 +4,20 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ESP32 Settings & HL7 Records</title>
+    <!-- Firebase SDK (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyDKi7eC8WD7fi_lu2Lm9FxUwMBIPd23bcw",
-            authDomain: "may-ra-dong.firebaseapp.com",
-            databaseURL: "https://may-ra-dong-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "may-ra-dong",
-            storageBucket: "may-ra-dong.firebasestorage.app",
-            messagingSenderId: "777662906578",
-            appId: "1:777662906578:web:7b52d7ed61fb868b112d0b",
-            measurementId: "G-F61WGFMGQ6"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-    </script>
-    <style media="screen">
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f4f4; margin: 0; }
-        .top-bar { background: #9ab474; color: white; padding: 15px 20px; font-size: 20px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
-        .nav { background: #e0e0e0; display: flex; border-bottom: 2px solid #9ab474; overflow-x: auto; white-space: nowrap;}
-        .nav a { padding: 12px 20px; text-decoration: none; color: #555; font-weight: bold; border-right: 1px solid #ccc; transition: 0.3s; cursor: pointer; flex: 1; text-align: center; }
-        .nav a:hover { background: #d5d5d5; }
-        .nav a.active { background: #fff; color: #9ab474; border-top: 3px solid #9ab474; border-bottom: 2px solid #fff; margin-bottom: -2px; }
-        .action-bar { padding: 12px 20px; display: flex; gap: 10px; justify-content: center; }
-        .container { max-width: 650px; margin: 20px auto; background: #fff; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); padding: 20px; }
-        .page { display: none; }
-        .page.active { display: block; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        
-        .search-box { width: 100%; padding: 12px 15px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 20px; font-size: 15px; outline: none; }
-        .search-box:focus { border-color: #9ab474; box-shadow: 0 0 5px rgba(154, 180, 116, 0.5); }
-        .list-container { border: 1px solid #ddd; border-radius: 8px; overflow: hidden; }
-        .device-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: #fff; border-bottom: 1px solid #eee; cursor: pointer; transition: 0.2s; }
-        .device-row:hover { background: #f1f8e9; }
-        .device-row:last-child { border-bottom: none; }
-        .device-name { font-weight: bold; font-size: 16px; color: #333; }
-        
-        /* 4 TRẠNG THÁI STATUS CHUẨN */
-        .status-badge { display: flex; align-items: center; font-size: 13px; font-weight: bold; }
-        .dot { width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
-
-        .online-text { color: #4CAF50; }
-        .dot.online { background-color: #4CAF50; box-shadow: 0 0 5px #4CAF50; }
-
-        .running-text { color: #2196F3; }
-        .dot.running { background-color: #2196F3; box-shadow: 0 0 6px #2196F3; animation: pulse 1.2s infinite; }
-
-        .error-text { color: #f44336; }
-        .dot.error { background-color: #f44336; box-shadow: 0 0 6px #f44336; }
-
-        .offline-text { color: #9e9e9e; }
-        .dot.offline { background-color: #9e9e9e; }
-
-        @keyframes pulse {
-            0% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.4; transform: scale(1.2); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-
-        .row { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
-        .row:last-child { border-bottom: none; }
-        .label { width: 220px; font-weight: bold; color: #555; font-size: 14px;} 
-        .input-box { flex: 1; }
-        input[type='text'], input[type='number'], input[type='password'], select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 3px; font-size: 14px; background: #fff; }
-        .btn { display: block; width: 100%; margin-top: 15px; padding: 12px; background: #4CAF50; color: white; border: none; font-size: 16px; cursor: pointer; border-radius: 4px; font-weight: bold; }
-        .btn-orange { background: #ff9800; }
-        .btn-blue { background: #2196F3; }
-        .btn-secondary { background: #757575; padding: 8px 12px; font-size: 14px; width: auto; margin: 0; }
-        
-        .info-item { padding: 12px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-        .info-label { font-weight: bold; color: #555; }
-        .info-value { color: #333; font-weight: bold; }
-
-        .section-title { margin-top: 20px; font-size: 16px; font-weight: bold; color: #9ab474; border-bottom: 2px solid #eee; padding-bottom: 5px; }
-
-        .wifi-list-box { margin: 15px 0; border: 1px solid #e0e0e0; border-radius: 6px; max-height: 180px; overflow-y: auto; background: #fafafa; }
-        .wifi-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 14px; }
-        .wifi-item:hover { background: #e8f5e9; }
-        .wifi-item:last-child { border-bottom: none; }
-        .wifi-ssid { font-weight: 600; color: #333; }
-        .wifi-signal { font-size: 12px; font-weight: bold; padding: 2px 6px; border-radius: 4px; }
-        .sig-good { color: #2e7d32; background: #e8f5e9; }
-        .sig-medium { color: #ef6c00; background: #fff3e0; }
-        .sig-weak { color: #c62828; background: #ffebee; }
-
-        /* Styles cho Tab Bản Ghi HL7 */
-        .record-card { background: #f9fbf7; border: 1px solid #dce7d0; border-radius: 6px; padding: 12px; margin-top: 15px; }
-        .zone-box { background: #fff; border: 1px solid #e0e0e0; border-left: 4px solid #9ab474; padding: 8px 12px; margin-bottom: 8px; border-radius: 4px; font-size: 13px; }
-        .zone-pass { border-left-color: #4CAF50; }
-        .zone-fail { border-left-color: #f44336; }
-        .hl7-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; background: #fff; }
-        .hl7-table th, .hl7-table td { border: 1px solid #eee; padding: 7px 10px; text-align: left; }
-        .hl7-table th { background: #f1f8e9; color: #333; font-weight: bold; }
-        .raw-box { background: #263238; color: #80cbc4; font-family: monospace; font-size: 11px; padding: 10px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; margin-top: 8px; max-height: 180px; }
-
-        @media (max-width: 600px) {
-            .container { margin: 10px; padding: 15px; }
-            .row { flex-direction: column; align-items: flex-start; }
-            .label { width: 100%; margin-bottom: 5px; }
-            .input-box { width: 100%; }
-        }
-    </style>
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div id="device-selection-page" class="page active">
         <div class="top-bar">⚙️ Quản lý thiết bị</div>
         <div class="container">
-            <input type="text" id="search-input" class="search-box" placeholder="🔍 Tìm kiếm thiết bị..." onkeyup="filterDevices()">
+            <input type="text" id="search-input" class="search-box" placeholder="🔍 Tìm kiếm thiết bị...">
             <div id="devices-list" class="list-container"></div>
             <div class="action-bar" style="padding: 15px 0 0 0;">
-                <button class="btn btn-orange" id="btn-check-device-status" onclick="broadcastPing()">⚡ Quét Trạng Thái (Global Ping)</button>
+                <button class="btn btn-orange" id="btn-check-device-status">⚡ Quét Trạng Thái (Global Ping)</button>
             </div>
         </div>
     </div>
@@ -124,23 +25,20 @@
     <div id="settings-page" class="page">
         <div class="top-bar">
             <span>⚙️ <span id="selected-device-name">ESP32</span></span>
-            <button class="btn-secondary" onclick="showPage('device-selection-page')">← Trở lại</button>
+            <button class="btn-secondary" id="btn-back">← Trở lại</button>
         </div>
         <div class="nav">
-            <a class="active" onclick="switchTab(event, 'wifi')">Wi-Fi</a>
-            <a onclick="switchTab(event, 'tcp')">TCP</a>
-            <a onclick="switchTab(event, 'config')">Thông tin</a>
-            <a onclick="switchTab(event, 'plasma')">Plasma Thawer</a>
-            <a onclick="switchTab(event, 'records')">📑 Bản ghi (HL7)</a>
+            <a class="active" data-tab="wifi">Wi-Fi</a>
+            <a data-tab="tcp">TCP</a>
+            <a data-tab="config">Thông tin</a>
+            <a data-tab="plasma">Plasma Thawer</a>
+            <a data-tab="records">📑 Bản ghi (HL7)</a>
         </div>
         <div class="container">
             <div id="wifi" class="tab-content active">
-                <button type="button" class="btn btn-blue" id="btn-scan-wifi" onclick="triggerWifiScan()" style="margin-top:0; margin-bottom:15px;">🔍 Quét Wi-Fi Xung Quanh</button>
-                
+                <button type="button" class="btn btn-blue" id="btn-scan-wifi" style="margin-top:0; margin-bottom:15px;">🔍 Quét Wi-Fi Xung Quanh</button>
                 <div class="label" style="width: 100%; margin-bottom: 5px;">Mạng Wi-Fi quét được (Click để chọn):</div>
-                <div id="scanned-wifi-list" class="wifi-list-box">
-                    <div style="color:#999; font-size:13px; text-align:center; padding:15px;">Chưa có dữ liệu. Bấm "Quét Wi-Fi" để tìm mạng!</div>
-                </div>
+                <div id="scanned-wifi-list" class="wifi-list-box"></div>
 
                 <form id="wifi-connect-form">
                     <div class="row"><div class="label">SSID (Tên mạng)</div><div class="input-box"><input type="text" id="ssid" required placeholder="Tên Wi-Fi"></div></div>
@@ -196,12 +94,11 @@
                 </form>
             </div>
 
-            <!-- TAB XỬ LÝ BẢN GHI HL7 (NHÁNH HISTORY) -->
             <div id="records" class="tab-content">
                 <div class="row" style="border:none; padding-bottom: 5px;">
                     <div class="label" style="width: 140px;">Chọn bản tin:</div>
                     <div class="input-box">
-                        <select id="record-select" onchange="onSelectRecordChange()">
+                        <select id="record-select">
                             <option value="">-- Chọn mã bản tin --</option>
                         </select>
                     </div>
@@ -236,7 +133,7 @@
 
                     <div class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
                         <span>Dữ Liệu Thô (raw_hl7)</span>
-                        <button type="button" class="btn-secondary" style="font-size: 11px; padding: 4px 8px;" onclick="copyRawHL7()">📋 Sao chép</button>
+                        <button type="button" class="btn-secondary" id="btn-copy-hl7" style="font-size: 11px; padding: 4px 8px;">📋 Sao chép</button>
                     </div>
                     <pre class="raw-box" id="hl7-raw-content"></pre>
                 </div>
@@ -244,445 +141,8 @@
         </div>
     </div>
 
-    <script>
-        let devicesDataCache = {};
-        let selectedDeviceId = null;
-        let isScanningWifi = false;
-        let currentDeviceRecords = {};
-
-        // HÀM PHÂN GIẢI 4 TRẠNG THÁI: Online / Running / Error / Offline
-        function parseStatusInfo(statusRaw) {
-            const s = (statusRaw || 'offline').toString().toLowerCase();
-            if (s === 'running') {
-                return { label: 'Running (Đang chạy)', cls: 'running', textCls: 'running-text' };
-            } else if (s === 'error') {
-                return { label: 'Error (Lỗi)', cls: 'error', textCls: 'error-text' };
-            } else if (s === 'online') {
-                return { label: 'Online (Chờ)', cls: 'online', textCls: 'online-text' };
-            } else {
-                return { label: 'Offline (Mất kết nối)', cls: 'offline', textCls: 'offline-text' };
-            }
-        }
-
-        function getBatteryPercentage(voltage) {
-            const curve = [
-                { v: 12.15, p: 100 }, { v: 11.85, p: 90 }, { v: 11.60, p: 80 },
-                { v: 11.35, p: 70 },  { v: 11.10, p: 60 }, { v: 10.95, p: 50 },
-                { v: 10.80, p: 40 },  { v: 10.70, p: 30 }, { v: 10.60, p: 20 },
-                { v: 10.50, p: 10 },  { v: 10.10, p: 5 },  { v: 9.60,  p: 0 }
-            ];
-            if (voltage >= curve[0].v) return 100;
-            if (voltage <= curve[curve.length - 1].v) return 0;
-            for (let i = 0; i < curve.length - 1; i++) {
-                if (voltage <= curve[i].v && voltage >= curve[i + 1].v) {
-                    let v_max = curve[i].v, v_min = curve[i + 1].v;
-                    let p_max = curve[i].p, p_min = curve[i + 1].p;
-                    return Math.round(p_min + ((voltage - v_min) / (v_max - v_min)) * (p_max - p_min));
-                }
-            }
-            return 0;
-        }
-
-        function showPage(pageName) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById(pageName).classList.add('active');
-            if(pageName === 'device-selection-page') selectedDeviceId = null;
-        }
-
-        function renderDevicesList() {
-            const list = document.getElementById('devices-list');
-            const search = document.getElementById('search-input').value.toLowerCase();
-            if (!devicesDataCache || Object.keys(devicesDataCache).length === 0) {
-                list.innerHTML = '<p style="text-align:center; padding:20px; color:#999;">Trống</p>'; return;
-            }
-            let html = '';
-            Object.keys(devicesDataCache).forEach(id => {
-                if (id.toLowerCase().includes(search)) {
-                    const st = parseStatusInfo(devicesDataCache[id].info && devicesDataCache[id].info.status);
-                    html += `
-                        <div class="device-row" onclick="selectDevice('${id}')">
-                            <div class="device-name">${id}</div>
-                            <div class="status-badge ${st.textCls}">
-                                <div class="dot ${st.cls}"></div> ${st.label}
-                            </div>
-                        </div>`;
-                }
-            });
-            list.innerHTML = html || '<p style="text-align:center; padding:20px; color:#999;">Không tìm thấy</p>';
-        }
-
-        function filterDevices() { renderDevicesList(); }
-
-        function selectDevice(id) {
-            selectedDeviceId = id;
-            document.getElementById('selected-device-name').textContent = id;
-            updateUI(devicesDataCache[id]);
-            showPage('settings-page');
-        }
-
-        function switchTab(e, tab) {
-            document.querySelectorAll('.tab-content, .nav a').forEach(el => el.classList.remove('active'));
-            document.getElementById(tab).classList.add('active');
-            e.target.classList.add('active');
-        }
-
-        function triggerWifiScan() {
-            if (!selectedDeviceId) return;
-            const btn = document.getElementById('btn-scan-wifi');
-            btn.disabled = true;
-            btn.textContent = "⏳ Đang quét Wi-Fi...";
-            isScanningWifi = true;
-
-            db.ref(`esp32/devices/${selectedDeviceId}/command/scan_wifi`).set(true);
-
-            setTimeout(() => {
-                if (isScanningWifi) {
-                    isScanningWifi = false;
-                    btn.disabled = false;
-                    btn.textContent = "🔍 Quét Wi-Fi Xung Quanh";
-                }
-            }, 8000);
-        }
-
-        function selectWifiSSID(ssid) {
-            document.getElementById('ssid').value = ssid;
-            document.getElementById('wifi-pass').focus();
-        }
-
-        function renderWifiList(wifiList) {
-            const listEl = document.getElementById('scanned-wifi-list');
-            if (!wifiList || wifiList.length === 0) {
-                listEl.innerHTML = '<div style="color:#999; font-size:13px; text-align:center; padding:15px;">Không tìm thấy mạng nào. Bấm "Quét Wi-Fi"!</div>';
-                return;
-            }
-
-            let html = '';
-            wifiList.forEach(w => {
-                let sigClass = 'sig-weak';
-                if (w.rssi >= -65) sigClass = 'sig-good';
-                else if (w.rssi >= -75) sigClass = 'sig-medium';
-
-                html += `
-                    <div class="wifi-item" onclick="selectWifiSSID('${w.ssid}')">
-                        <div class="wifi-ssid">📶 ${w.ssid}</div>
-                        <div class="wifi-signal ${sigClass}">${w.rssi} dBm (CH:${w.channel || '?'})</div>
-                    </div>`;
-            });
-            listEl.innerHTML = html;
-        }
-
-        // ==================== BỘ XỬ LÝ VÀ PHÂN GIẢI BẢN GHI HL7 ====================
-        function formatHL7Date(str) {
-            if (!str || str.length < 8) return str || 'N/A';
-            const y = str.substr(0, 4), m = str.substr(4, 2), d = str.substr(6, 2);
-            let time = '';
-            if (str.length >= 14) {
-                time = ' ' + str.substr(8, 2) + ':' + str.substr(10, 2) + ':' + str.substr(12, 2);
-            }
-            return `${d}/${m}/${y}${time}`;
-        }
-
-        function parseHL7String(raw) {
-            if (!raw) return null;
-            let normalized = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-            normalized = normalized.replace(/(MSH|PID|OBR|NTE|OBX)\|/g, '\n$1|').trim();
-            const lines = normalized.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-
-            const result = {
-                msh: {},
-                pid: {},
-                notes: [],
-                obxList: []
-            };
-
-            lines.forEach(line => {
-                const parts = line.split('|');
-                const seg = parts[0];
-                if (seg === 'MSH') {
-                    result.msh = {
-                        sender: parts[2] || '',
-                        facility: parts[3] || '',
-                        timestamp: parts[6] || '',
-                        msgType: parts[8] || '',
-                        msgId: parts[9] || ''
-                    };
-                } else if (seg === 'PID') {
-                    result.pid = {
-                        batchId: parts[3] || '',
-                        batchType: parts[5] || ''
-                    };
-                } else if (seg === 'NTE') {
-                    result.notes.push(parts[3] || '');
-                } else if (seg === 'OBX') {
-                    result.obxList.push({
-                        seq: parts[1] || '',
-                        bagIndex: parts[3] || '',
-                        barcode: parts[5] || '',
-                        status: parts[11] || 'F'
-                    });
-                }
-            });
-
-            return { parsed: result, raw: normalized };
-        }
-
-        function renderHL7RecordsDropdown(device) {
-            const selectEl = document.getElementById('record-select');
-            const prevSelected = selectEl.value;
-            selectEl.innerHTML = '<option value="">-- Chọn mã bản tin --</option>';
-            currentDeviceRecords = {};
-
-            const historyNode = device.history || {};
-            const keys = Object.keys(historyNode).sort().reverse();
-            let count = 0;
-
-            keys.forEach(key => {
-                if (historyNode[key] && historyNode[key].raw_hl7) {
-                    currentDeviceRecords[key] = historyNode[key].raw_hl7;
-                    const opt = document.createElement('option');
-                    opt.value = key;
-                    opt.textContent = `📋 ${key}`;
-                    selectEl.appendChild(opt);
-                    count++;
-                }
-            });
-
-            if (count > 0) {
-                if (prevSelected && currentDeviceRecords[prevSelected]) {
-                    selectEl.value = prevSelected;
-                    displayHL7Detail(currentDeviceRecords[prevSelected]);
-                } else {
-                    const firstKey = keys.find(k => currentDeviceRecords[k]);
-                    selectEl.value = firstKey;
-                    displayHL7Detail(currentDeviceRecords[firstKey]);
-                }
-            } else {
-                document.getElementById('record-empty-state').style.display = 'block';
-                document.getElementById('record-detail-view').style.display = 'none';
-            }
-        }
-
-        function onSelectRecordChange() {
-            const key = document.getElementById('record-select').value;
-            if (key && currentDeviceRecords[key]) {
-                displayHL7Detail(currentDeviceRecords[key]);
-            } else {
-                document.getElementById('record-empty-state').style.display = 'block';
-                document.getElementById('record-detail-view').style.display = 'none';
-            }
-        }
-
-        function displayHL7Detail(rawString) {
-            const data = parseHL7String(rawString);
-            if (!data) return;
-
-            document.getElementById('record-empty-state').style.display = 'none';
-            document.getElementById('record-detail-view').style.display = 'block';
-
-            const msh = data.parsed.msh;
-            const pid = data.parsed.pid;
-
-            document.getElementById('hl7-msg-id').textContent = msh.msgId || document.getElementById('record-select').value;
-            document.getElementById('hl7-batch-id').textContent = pid.batchId || 'N/A';
-            document.getElementById('hl7-timestamp').textContent = formatHL7Date(msh.timestamp);
-            document.getElementById('hl7-sender').textContent = `${msh.sender || 'N/A'} (${msh.facility || 'N/A'})`;
-
-            const zoneContainer = document.getElementById('hl7-zones');
-            zoneContainer.innerHTML = '';
-            if (data.parsed.notes.length === 0) {
-                zoneContainer.innerHTML = '<div style="color:#999; font-size:13px;">Không có ghi chú nhiệt độ zone.</div>';
-            } else {
-                data.parsed.notes.forEach(note => {
-                    const isPass = note.includes('PASSED');
-                    const div = document.createElement('div');
-                    div.className = `zone-box ${isPass ? 'zone-pass' : 'zone-fail'}`;
-                    div.innerHTML = `<strong>${isPass ? '✅' : '⚠️'}</strong> ${note}`;
-                    zoneContainer.appendChild(div);
-                });
-            }
-
-            const bagsTbody = document.getElementById('hl7-bags-body');
-            bagsTbody.innerHTML = '';
-            if (data.parsed.obxList.length === 0) {
-                bagsTbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#999;">Không có thông tin túi.</td></tr>';
-            } else {
-                data.parsed.obxList.forEach(item => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td style="text-align:center; font-weight:bold; color:#555;">${item.bagIndex || item.seq}</td>
-                        <td style="font-family:monospace; font-weight:bold; color:#1565c0;">${item.barcode || 'N/A'}</td>
-                        <td style="text-align:center;"><span style="color:#2e7d32; font-weight:bold;">${item.status}</span></td>
-                    `;
-                    bagsTbody.appendChild(tr);
-                });
-            }
-
-            document.getElementById('hl7-raw-content').textContent = data.raw;
-        }
-
-        function copyRawHL7() {
-            const raw = document.getElementById('hl7-raw-content').textContent;
-            if (!raw) return;
-            navigator.clipboard.writeText(raw).then(() => {
-                alert("📋 Đã sao chép bản tin HL7 vào clipboard!");
-            });
-        }
-
-        function updateUI(device) {
-            if (!device) return;
-            const info = device.info || {}, tcp = device.tcp || {}, plasma = device.plasma || {}, wifi = device.wifi || {};
-            
-            // CẬP NHẬT 4 TRẠNG THÁI STATUS
-            const st = parseStatusInfo(info.status);
-            const stEl = document.getElementById('network-status');
-            stEl.textContent = st.label;
-            stEl.className = 'info-value ' + st.textCls;
-
-            // HIỂN THỊ FSM VÀ MÃ LỖI
-            document.getElementById('lpc-fsm').textContent = info.lpc_fsm !== undefined ? `0x${Number(info.lpc_fsm).toString(16).toUpperCase()}` : 'N/A';
-            const errVal = info.lpc_err !== undefined ? Number(info.lpc_err) : 0;
-            const errEl = document.getElementById('lpc-err');
-            errEl.textContent = `0x${errVal.toString(16).toUpperCase().padStart(4, '0')}`;
-            errEl.style.color = (errVal !== 0) ? '#f44336' : '#333';
-
-            document.getElementById('ip-address').textContent = info.ip || 'N/A';
-            document.getElementById('mac-address').textContent = info.mac || 'N/A';
-            
-            let batteryText = 'N/A';
-            if (info.pin !== undefined && info.pin !== null) {
-                let raw = parseFloat(info.pin);
-                let voltage = (raw > 50.0) ? (raw / 100.0) : raw;
-                batteryText = `${getBatteryPercentage(voltage)}% (${voltage.toFixed(2)} V)`;
-            }
-            document.getElementById('battery-level').textContent = batteryText;
-            
-            document.getElementById('ssid').value = wifi.ssid || info.ssid || '';
-            document.getElementById('wifi-pass').value = wifi.pass || '';
-
-            document.getElementById('server_ip').value = tcp.server_ip || '';
-            document.getElementById('server_port').value = tcp.server_port || '';
-
-            if (device.wifi_list) {
-                renderWifiList(device.wifi_list);
-            }
-
-            const scanCommand = device.command && device.command.scan_wifi;
-            if (isScanningWifi && scanCommand === false) {
-                isScanningWifi = false;
-                const btn = document.getElementById('btn-scan-wifi');
-                btn.disabled = false;
-                btn.textContent = "🔍 Quét Wi-Fi Xung Quanh";
-            }
-
-            // Cấu hình Plasma
-            document.getElementById('sp_t_operator').value = plasma.sp_t_operator ?? '';
-            document.getElementById('sp_t_hot').value = plasma.sp_t_hot ?? '';
-            document.getElementById('sp_fan').value = plasma.sp_fan ?? '';
-            document.getElementById('t_max').value = plasma.t_max ?? '';
-            document.getElementById('t_min').value = plasma.t_min ?? '';
-            document.getElementById('t_offset_1').value = plasma.t_offset_1 ?? '';
-            document.getElementById('r_cal_1').value = plasma.r_cal_1 ?? '';
-            document.getElementById('t_offset_2').value = plasma.t_offset_2 ?? '';
-            document.getElementById('r_cal_2').value = plasma.r_cal_2 ?? '';
-            document.getElementById('t_offset_3').value = plasma.t_offset_3 ?? '';
-            document.getElementById('r_cal_3').value = plasma.r_cal_3 ?? '';
-            document.getElementById('t_offset_4').value = plasma.t_offset_4 ?? '';
-            document.getElementById('r_cal_4').value = plasma.r_cal_4 ?? '';
-            document.getElementById('pid_kp').value = plasma.pid_kp ?? '';
-            document.getElementById('pid_ti').value = plasma.pid_ti ?? '';
-            document.getElementById('pid_td').value = plasma.pid_td ?? '';
-
-            renderHL7RecordsDropdown(device);
-        }
-
-        // =========================================================================
-        // HÀM PING MỚI: CHỈ ĐỔI THÀNH "OFFLINE" NẾU THIẾT BỊ KHÔNG PHẢN HỒI
-        // NẾU CÓ PHẢN HỒI, GIỮ NGUYÊN TRẠNG THÁI THẬT (ONLINE/RUNNING/ERROR) DO ESP32 TỰ GỬI
-        // =========================================================================
-        function broadcastPing() {
-            const btn = document.getElementById('btn-check-device-status');
-            btn.disabled = true;
-            btn.textContent = "⏳ Đang phát sóng...";
-
-            const currentPing = Date.now().toString();
-            db.ref('esp32/global_command/ping').set(currentPing);
-
-            setTimeout(() => {
-                const updates = {};
-                Object.keys(devicesDataCache).forEach(deviceId => {
-                    const device = devicesDataCache[deviceId];
-                    const pongValue = (device.info && device.info.pong) ? device.info.pong.toString() : '';
-
-                    // NẾU KHÔNG TRẢ LỜI PONG (Mất nguồn / mất mạng) -> Gán Offline
-                    if (pongValue !== currentPing) {
-                        updates[`${deviceId}/info/status`] = 'offline';
-                    }
-                    // NẾU CÓ TRẢ LỜI PONG -> KHÔNG ghi đè chữ 'online' vào đây!
-                    // ESP32 đã tự báo trạng thái thực của nó (online/Running/Error) vào node status.
-                });
-
-                if (Object.keys(updates).length > 0) {
-                    db.ref('esp32/devices').update(updates).then(() => {
-                        btn.disabled = false;
-                        btn.textContent = "⚡ Quét Trạng Thái (Global Ping)";
-                    });
-                } else {
-                    btn.disabled = false;
-                    btn.textContent = "⚡ Quét Trạng Thái (Global Ping)";
-                }
-            }, 3000);
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            db.ref('esp32/devices').on('value', (snap) => {
-                devicesDataCache = snap.val() || {};
-                if(document.getElementById('device-selection-page').classList.contains('active')) renderDevicesList();
-                if(selectedDeviceId && devicesDataCache[selectedDeviceId]) updateUI(devicesDataCache[selectedDeviceId]);
-            });
-
-            document.getElementById('wifi-connect-form').onsubmit = (e) => {
-                e.preventDefault();
-                const ssidVal = document.getElementById('ssid').value;
-                const passVal = document.getElementById('wifi-pass').value;
-
-                db.ref(`esp32/devices/${selectedDeviceId}/wifi`).set({
-                    ssid: ssidVal,
-                    pass: passVal
-                }).then(() => alert("✅ Đã gửi lệnh lưu Wi-Fi! ESP32 đang chuyển sang mạng mới..."));
-            };
-
-            document.getElementById('tcp-form').onsubmit = (e) => {
-                e.preventDefault();
-                db.ref(`esp32/devices/${selectedDeviceId}/tcp`).set({
-                    server_ip: document.getElementById('server_ip').value,
-                    server_port: parseInt(document.getElementById('server_port').value)
-                }).then(() => alert("✅ Đã lưu TCP!"));
-            };
-
-            document.getElementById('plasma-form').onsubmit = (e) => {
-                e.preventDefault();
-                const plasmaData = {
-                    sp_t_operator: parseFloat(document.getElementById('sp_t_operator').value),
-                    sp_t_hot: parseFloat(document.getElementById('sp_t_hot').value),
-                    sp_fan: parseFloat(document.getElementById('sp_fan').value),
-                    t_max: parseFloat(document.getElementById('t_max').value),
-                    t_min: parseFloat(document.getElementById('t_min').value),
-                    t_offset_1: parseFloat(document.getElementById('t_offset_1').value),
-                    r_cal_1: parseFloat(document.getElementById('r_cal_1').value),
-                    t_offset_2: parseFloat(document.getElementById('t_offset_2').value),
-                    r_cal_2: parseFloat(document.getElementById('r_cal_2').value),
-                    t_offset_3: parseFloat(document.getElementById('t_offset_3').value),
-                    r_cal_3: parseFloat(document.getElementById('r_cal_3').value),
-                    t_offset_4: parseFloat(document.getElementById('t_offset_4').value),
-                    r_cal_4: parseFloat(document.getElementById('r_cal_4').value),
-                    pid_kp: parseFloat(document.getElementById('pid_kp').value),
-                    pid_ti: parseFloat(document.getElementById('pid_ti').value),
-                    pid_td: parseFloat(document.getElementById('pid_td').value)
-                };
-                db.ref(`esp32/devices/${selectedDeviceId}/plasma`).set(plasmaData)
-                    .then(() => alert("✅ Đã lưu Cấu hình Plasma Thawer thành công!"));
-            };
-        });
-    </script>
+    <!-- Nạp file CSS bạn chỉ cần copy nguyên thẻ style cũ bỏ vào css/style.css -->
+    <!-- Script chạy dạng Module ES6 -->
+    <script type="module" src="js/app.js"></script>
 </body>
 </html>
