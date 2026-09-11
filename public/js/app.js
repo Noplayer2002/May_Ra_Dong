@@ -123,35 +123,104 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 8000);
     };
 
-    // 6. Action: Forms Submit
+    // 6. Action: Forms Submit - CHỈ GỬI CÁC THAM SỐ THỰC SỰ THAY ĐỔI
+
+    // FORM WIFI
     document.getElementById('wifi-connect-form').onsubmit = async (e) => {
         e.preventDefault();
-        await DeviceService.saveWifi(AppState.selectedDeviceId, 
-            document.getElementById('ssid').value, 
-            document.getElementById('wifi-pass').value
-        );
-        alert("✅ Đã gửi lệnh lưu Wi-Fi!");
+        const devId = AppState.selectedDeviceId;
+        if (!devId) return;
+
+        const currentDevice = AppState.devices[devId] || {};
+        const currentWifi = currentDevice.wifi || {};
+
+        const newSsid = document.getElementById('ssid').value.trim();
+        const newPass = document.getElementById('wifi-pass').value;
+
+        const changedFields = {};
+        if (newSsid !== (currentWifi.ssid || '')) {
+            changedFields['ssid'] = newSsid;
+        }
+        if (newPass && newPass !== (currentWifi.pass || '')) {
+            changedFields['pass'] = newPass;
+        }
+
+        if (Object.keys(changedFields).length === 0) {
+            alert("ℹ️ Thông tin Wi-Fi không có thay đổi nào!");
+            return;
+        }
+
+        await DeviceService.updateWifi(devId, changedFields);
+        alert(`✅ Đã cập nhật Wi-Fi (${Object.keys(changedFields).join(', ')})!`);
     };
 
+    // FORM TCP
     document.getElementById('tcp-form').onsubmit = async (e) => {
         e.preventDefault();
-        await DeviceService.saveTcp(AppState.selectedDeviceId, 
-            document.getElementById('server_ip').value, 
-            parseInt(document.getElementById('server_port').value)
-        );
-        alert("✅ Đã lưu TCP!");
+        const devId = AppState.selectedDeviceId;
+        if (!devId) return;
+
+        const currentDevice = AppState.devices[devId] || {};
+        const currentTcp = currentDevice.tcp || {};
+
+        const newIp = document.getElementById('server_ip').value.trim();
+        const newPort = parseInt(document.getElementById('server_port').value);
+
+        const changedFields = {};
+        if (newIp !== (currentTcp.server_ip || '')) {
+            changedFields['server_ip'] = newIp;
+        }
+        if (!isNaN(newPort) && newPort !== Number(currentTcp.server_port)) {
+            changedFields['server_port'] = newPort;
+        }
+
+        if (Object.keys(changedFields).length === 0) {
+            alert("ℹ️ Cấu hình TCP không có thay đổi nào!");
+            return;
+        }
+
+        await DeviceService.updateTcp(devId, changedFields);
+        alert(`✅ Đã cập nhật TCP (${Object.keys(changedFields).join(', ')})!`);
     };
 
+    // FORM PLASMA THAWER
     document.getElementById('plasma-form').onsubmit = async (e) => {
         e.preventDefault();
-        const plasmaFields = ['sp_t_operator', 'sp_t_hot', 'sp_fan', 't_max', 't_min', 
-                              't_offset_1', 'r_cal_1', 't_offset_2', 'r_cal_2', 
-                              't_offset_3', 'r_cal_3', 't_offset_4', 'r_cal_4', 
-                              'pid_kp', 'pid_ti', 'pid_td'];
-        const payload = {};
-        plasmaFields.forEach(f => payload[f] = parseFloat(document.getElementById(f).value));
-        await DeviceService.savePlasma(AppState.selectedDeviceId, payload);
-        alert("✅ Đã lưu Cấu hình Plasma Thawer thành công!");
+        const devId = AppState.selectedDeviceId;
+        if (!devId) return;
+
+        const currentDevice = AppState.devices[devId] || {};
+        const currentPlasma = currentDevice.plasma || {};
+
+        const plasmaFields = [
+            'sp_t_operator', 'sp_t_hot', 'sp_fan', 't_max', 't_min', 
+            't_offset_1', 'r_cal_1', 't_offset_2', 'r_cal_2', 
+            't_offset_3', 'r_cal_3', 't_offset_4', 'r_cal_4', 
+            'pid_kp', 'pid_ti', 'pid_td'
+        ];
+
+        const changedFields = {};
+
+        plasmaFields.forEach(field => {
+            const inputVal = document.getElementById(field).value;
+            if (inputVal === '') return;
+
+            const newVal = parseFloat(inputVal);
+            const origVal = currentPlasma[field] !== undefined ? parseFloat(currentPlasma[field]) : null;
+
+            // Kiểm tra xem trường này có bị sửa đổi hay chưa từng tồn tại
+            if (origVal === null || Math.abs(newVal - origVal) > 0.0001) {
+                changedFields[field] = newVal;
+            }
+        });
+
+        if (Object.keys(changedFields).length === 0) {
+            alert("ℹ️ Cấu hình Plasma không có thay đổi nào!");
+            return;
+        }
+
+        await DeviceService.updatePlasma(devId, changedFields);
+        alert(`✅ Đã cập nhật ${Object.keys(changedFields).length} thông số Plasma:\n${Object.keys(changedFields).join(', ')}`);
     };
 
     // 7. HL7 Record Select & Copy
