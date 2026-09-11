@@ -23,48 +23,47 @@ export const DeviceService = {
 
     // deviceService.js
 
-async broadcastPing() {
+function broadcastPing() {
+    const btn = document.getElementById('btn-check-device-status');
+    btn.disabled = true;
+    btn.textContent = "⏳ Đang phát sóng...";
+
     const currentPing = Date.now().toString();
-    
-    // 1. Gửi lệnh ping lên Firebase
-    await db.ref('esp32/global_command/ping').set(currentPing);
+    db.ref('esp32/global_command/ping').set(currentPing);
 
-    return new Promise((resolve) => {
-        setTimeout(async () => {
-            // 2. Kéo dữ liệu thực tế tại thời điểm sau 3 giây từ Firebase về
-            const snap = await db.ref('esp32/devices').once('value');
-            const devices = snap.val() || {};
-            const updates = {};
+    setTimeout(() => {
+        const updates = {};
+        
+        Object.keys(devicesDataCache).forEach(deviceId => {
+            const device = devicesDataCache[deviceId];
+            const info = (device && device.info) ? device.info : {};
+            
+            const currentStatus = (info.status || '').toLowerCase();
+            const pongValue = (info.pong || '').toString().trim();
 
-            Object.keys(devices).forEach(deviceId => {
-                const dev = devices[deviceId];
-                const info = dev?.info || {};
-
-                const currentStatus = (info.status || '').toLowerCase();
-                const pongValue = (info.pong || '').toString().trim();
-
-                // KIỂM TRA THỰC TẾ:
-                // Thiết bị được coi là CÒN SỐNG nếu:
-                // - ESP32 đã trả về pong khớp mã
-                // - HOẶC trạng thái của nó đang là 'online' hoặc 'running'
-                const isAlive = (pongValue === currentPing) || 
-                                (currentStatus === 'online') || 
-                                (currentStatus === 'running');
-
-                if (!isAlive) {
-                    // Chỉ những thiết bị THỰC SỰ im lặng mới bị gán offline
-                    updates[`${deviceId}/info/status`] = 'offline';
-                }
-            });
-
-            // 3. Ghi đè trạng thái offline cho các máy không phản hồi
-            if (Object.keys(updates).length > 0) {
-                await db.ref('esp32/devices').update(updates);
+            // ==============================================================
+            // NẾU THIẾT BỊ ĐÃ LÊN 'ONLINE' HOẶC 'RUNNING' (HOẶC PONG KHỚP):
+            // -> NÓ ĐÃ SỐNG! BỎ QUA NGAY, GIỮ NGUYÊN TRẠNG THÁI CHO NÓ!
+            // ==============================================================
+            if (currentStatus === 'online' || currentStatus === 'running' || pongValue === currentPing) {
+                return; // Thoát ra, không thêm vào danh sách bị đè offline
             }
 
-            resolve();
-        }, 3000);
-    });
+            // CHỈ NHỮNG THIẾT BỊ KHÔNG HỀ PHẢN HỒI GÌ MỚI BỊ ÉP VỀ OFFLINE
+            updates[`${deviceId}/info/status`] = 'offline';
+        });
+
+        // Chỉ gửi cập nhật nếu có thiết bị thực sự chết
+        if (Object.keys(updates).length > 0) {
+            db.ref('esp32/devices').update(updates).then(() => {
+                btn.disabled = false;
+                btn.textContent = "⚡ Quét Trạng Thái (Global Ping)";
+            });
+        } else {
+            btn.disabled = false;
+            btn.textContent = "⚡ Quét Trạng Thái (Global Ping)";
+        }
+    }, 3000);
 }
 }
 };
