@@ -21,26 +21,29 @@ export const DeviceService = {
         return db.ref(`esp32/devices/${deviceId}/plasma`).set(plasmaData);
     },
 
-    async broadcastPing(devicesCache) {
-        const currentPing = Date.now().toString();
-        await db.ref('esp32/global_command/ping').set(currentPing);
+    async broadcastPing() {
+    const currentPing = Date.now().toString();
+    await db.ref('esp32/global_command/ping').set(currentPing);
 
-        return new Promise((resolve) => {
-            setTimeout(async () => {
-                const updates = {};
-                Object.keys(devicesCache).forEach(deviceId => {
-                    const device = devicesCache[deviceId];
-                    const pongValue = device?.info?.pong?.toString() || '';
-                    if (pongValue !== currentPing) {
-                        updates[`${deviceId}/info/status`] = 'offline';
-                    }
-                });
-
-                if (Object.keys(updates).length > 0) {
-                    await db.ref('esp32/devices').update(updates);
+    return new Promise((resolve) => {
+        setTimeout(async () => {
+            // Lấy snapshot mới nhất từ Firebase sau 3 giây chờ thiết bị hồi đáp
+            const snap = await db.ref('esp32/devices').once('value');
+            const latestDevices = snap.val() || {};
+            
+            const updates = {};
+            Object.keys(latestDevices).forEach(deviceId => {
+                const pongValue = latestDevices[deviceId]?.info?.pong?.toString() || '';
+                if (pongValue !== currentPing) {
+                    updates[`${deviceId}/info/status`] = 'offline';
                 }
-                resolve();
-            }, 3000);
-        });
-    }
+            });
+
+            if (Object.keys(updates).length > 0) {
+                await db.ref('esp32/devices').update(updates);
+            }
+            resolve();
+        }, 3000);
+    });
+}
 };
