@@ -31,19 +31,33 @@ function broadcastPing() {
     const currentPing = Date.now().toString();
     db.ref('esp32/global_command/ping').set(currentPing);
 
-    setTimeout(() => {
-        // KHÓA HOÀN TOÀN KHÔNG CHO PHÉP GHI BẤT KỲ CHỮ 'OFFLINE' NÀO LÊN FIREBASE
-        btn.disabled = false;
-        btn.textContent = "⚡ Quét Trạng Thái (Global Ping)";
+    // TĂNG LÊN 5000ms (5 GIÂY) ĐỂ ĐỢI VÒNG LẶP 2500ms CỦA ESP32 CHẠY XONG
+    setTimeout(async () => {
+        // Đọc trực tiếp dữ liệu mới nhất vừa hạ cánh xuống Firebase
+        const snap = await db.ref('esp32/devices').once('value');
+        const latestData = snap.val() || {};
+        const updates = {};
 
-        // In ra màn hình kiểm tra xem sau 3s thiết bị đang lưu cái gì
-        Object.keys(devicesDataCache).forEach(deviceId => {
-            const dev = devicesDataCache[deviceId];
-            console.log("DỮ LIỆU THỰC TẾ SAU 3S CỦA [" + deviceId + "]:", dev.info);
-            alert("THIẾT BỊ: " + deviceId + 
-                  "\n- Status hiện tại: " + (dev.info ? dev.info.status : "không có") + 
-                  "\n- Pong hiện tại: " + (dev.info ? dev.info.pong : "không có"));
+        Object.keys(latestData).forEach(deviceId => {
+            const dev = latestData[deviceId];
+            const info = (dev && dev.info) ? dev.info : {};
+            const pongValue = (info.pong || '').toString().trim();
+            const currentStatus = (info.status || '').toLowerCase();
+
+            // Nếu ESP32 đã trả lời đúng mã Ping HOẶC đang báo online/running:
+            if (pongValue === currentPing || currentStatus === 'online' || currentStatus === 'running') {
+                return; // Giữ nguyên trạng thái, KHÔNG ĐƯỢC ĐÈ OFFLINE
+            }
+
+            // Chỉ những máy không hề có phản hồi mới bị gán offline
+            updates[`${deviceId}/info/status`] = 'offline';
         });
 
-    }, 3000);
+        if (Object.keys(updates).length > 0) {
+            await db.ref('esp32/devices').update(updates);
+        }
+
+        btn.disabled = false;
+        btn.textContent = "⚡ Quét Trạng Thái (Global Ping)";
+    }, 5000);
 };
