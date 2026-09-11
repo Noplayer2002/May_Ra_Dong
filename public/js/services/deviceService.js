@@ -64,6 +64,4 @@ function broadcastPing() {
             btn.textContent = "⚡ Quét Trạng Thái (Global Ping)";
         }
     }, 3000);
-}
-}
 };
