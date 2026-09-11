@@ -22,43 +22,32 @@ export const DeviceService = {
     },
 
     // deviceService.js
+    async broadcastPing() {
+        const currentPing = Date.now().toString();
+        await db.ref('esp32/global_command/ping').set(currentPing);
 
-function broadcastPing() {
-    const btn = document.getElementById('btn-check-device-status');
-    btn.disabled = true;
-    btn.textContent = "⏳ Đang phát sóng...";
+        return new Promise((resolve) => {
+            setTimeout(async () => {
+                // TƯƠNG ĐƯƠNG VỚI VIỆC ĐỌC BIẾN TOÀN CỤC MỚI NHẤT
+                const snap = await db.ref('esp32/devices').once('value');
+                const latestDevices = snap.val() || {};
 
-    // 1. Tạo mã Ping duy nhất cho lần quét này
-    const currentPing = Date.now().toString();
-    db.ref('esp32/global_command/ping').set(currentPing);
+                const updates = {};
+                Object.keys(latestDevices).forEach(deviceId => {
+                    const device = latestDevices[deviceId];
+                    const pongValue = (device.info && device.info.pong) ? device.info.pong.toString() : '';
 
-    // 2. Chờ 3 giây cho ESP32 nhận và đẩy Pong lên
-    setTimeout(() => {
-        const updates = {};
+                    // Giữ nguyên 100% logic của file cũ
+                    if (pongValue !== currentPing) {
+                        updates[`${deviceId}/info/status`] = 'offline';
+                    }
+                });
 
-        Object.keys(devicesDataCache).forEach(deviceId => {
-            const dev = devicesDataCache[deviceId];
-            const pongData = (dev?.info?.pong || '').toString();
-
-            // KIỂM TRA: Pong có chứa mã Ping vừa phát hay không?
-            if (pongData.includes(currentPing)) {
-                // -> ESP32 CÓ PHẢN HỒI (CÒN SỐNG) -> BỎ QUA, GIỮ NGUYÊN!
-                return;
-            }
-
-            // -> ESP32 KHÔNG PHẢN HỒI (ĐÃ CHẾT) -> ĐỘC QUYỀN GÁN OFFLINE
-            updates[`${deviceId}/info/status`] = 'offline';
+                if (Object.keys(updates).length > 0) {
+                    await db.ref('esp32/devices').update(updates);
+                }
+                resolve();
+            }, 3000);
         });
-
-        // 3. Ghi đè offline cho các máy chết lên Firebase
-        if (Object.keys(updates).length > 0) {
-            db.ref('esp32/devices').update(updates).then(() => {
-                btn.disabled = false;
-                btn.textContent = "⚡ Quét Trạng Thái (Global Ping)";
-            });
-        } else {
-            btn.disabled = false;
-            btn.textContent = "⚡ Quét Trạng Thái (Global Ping)";
-        }
-    }, 3000);
-}
+    }
+};
