@@ -32,36 +32,18 @@ function broadcastPing() {
     db.ref('esp32/global_command/ping').set(currentPing);
 
     setTimeout(() => {
-        const updates = {};
-        
+        // KHÓA HOÀN TOÀN KHÔNG CHO PHÉP GHI BẤT KỲ CHỮ 'OFFLINE' NÀO LÊN FIREBASE
+        btn.disabled = false;
+        btn.textContent = "⚡ Quét Trạng Thái (Global Ping)";
+
+        // In ra màn hình kiểm tra xem sau 3s thiết bị đang lưu cái gì
         Object.keys(devicesDataCache).forEach(deviceId => {
-            const device = devicesDataCache[deviceId];
-            const info = (device && device.info) ? device.info : {};
-            
-            const currentStatus = (info.status || '').toLowerCase();
-            const pongValue = (info.pong || '').toString().trim();
-
-            // ==============================================================
-            // NẾU THIẾT BỊ ĐÃ LÊN 'ONLINE' HOẶC 'RUNNING' (HOẶC PONG KHỚP):
-            // -> NÓ ĐÃ SỐNG! BỎ QUA NGAY, GIỮ NGUYÊN TRẠNG THÁI CHO NÓ!
-            // ==============================================================
-            if (currentStatus === 'online' || currentStatus === 'running' || pongValue === currentPing) {
-                return; // Thoát ra, không thêm vào danh sách bị đè offline
-            }
-
-            // CHỈ NHỮNG THIẾT BỊ KHÔNG HỀ PHẢN HỒI GÌ MỚI BỊ ÉP VỀ OFFLINE
-            updates[`${deviceId}/info/status`] = 'offline';
+            const dev = devicesDataCache[deviceId];
+            console.log("DỮ LIỆU THỰC TẾ SAU 3S CỦA [" + deviceId + "]:", dev.info);
+            alert("THIẾT BỊ: " + deviceId + 
+                  "\n- Status hiện tại: " + (dev.info ? dev.info.status : "không có") + 
+                  "\n- Pong hiện tại: " + (dev.info ? dev.info.pong : "không có"));
         });
 
-        // Chỉ gửi cập nhật nếu có thiết bị thực sự chết
-        if (Object.keys(updates).length > 0) {
-            db.ref('esp32/devices').update(updates).then(() => {
-                btn.disabled = false;
-                btn.textContent = "⚡ Quét Trạng Thái (Global Ping)";
-            });
-        } else {
-            btn.disabled = false;
-            btn.textContent = "⚡ Quét Trạng Thái (Global Ping)";
-        }
     }, 3000);
 };
