@@ -9,26 +9,25 @@ export const DeviceService = {
         return db.ref(`esp32/devices/${deviceId}/command/scan_wifi`).set(true);
     },
 
-    saveWifi(deviceId, ssid, pass) {
-        return db.ref(`esp32/devices/${deviceId}/wifi`).set({ ssid, pass });
+    // Dùng .update() để chỉ ghi đè đúng các trường truyền vào
+    updateWifi(deviceId, changedData) {
+        return db.ref(`esp32/devices/${deviceId}/wifi`).update(changedData);
     },
 
-    saveTcp(deviceId, server_ip, server_port) {
-        return db.ref(`esp32/devices/${deviceId}/tcp`).set({ server_ip, server_port });
+    updateTcp(deviceId, changedData) {
+        return db.ref(`esp32/devices/${deviceId}/tcp`).update(changedData);
     },
 
-    savePlasma(deviceId, plasmaData) {
-        return db.ref(`esp32/devices/${deviceId}/plasma`).set(plasmaData);
+    updatePlasma(deviceId, changedData) {
+        return db.ref(`esp32/devices/${deviceId}/plasma`).update(changedData);
     },
 
-    // deviceService.js
     async broadcastPing() {
         const currentPing = Date.now().toString();
         await db.ref('esp32/global_command/ping').set(currentPing);
 
         return new Promise((resolve) => {
             setTimeout(async () => {
-                // TƯƠNG ĐƯƠNG VỚI VIỆC ĐỌC BIẾN TOÀN CỤC MỚI NHẤT
                 const snap = await db.ref('esp32/devices').once('value');
                 const latestDevices = snap.val() || {};
 
@@ -37,7 +36,6 @@ export const DeviceService = {
                     const device = latestDevices[deviceId];
                     const pongValue = (device.info && device.info.pong) ? device.info.pong.toString() : '';
 
-                    // Giữ nguyên 100% logic của file cũ
                     if (pongValue !== currentPing) {
                         updates[`${deviceId}/info/status`] = 'offline';
                     }
