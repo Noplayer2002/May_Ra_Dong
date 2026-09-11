@@ -43,11 +43,4 @@ export const DeviceService = {
             }, 3000);
         });
     }
-    // Bản an toàn tuyệt đối: Không Listener ngầm, không quét mảng
-    async broadcastPing() {
-        const pingId = Date.now().toString();
-        console.log("Phát Ping:", pingId);
-        // Chỉ ghi 1 giá trị duy nhất lên node ping rồi thôi
-        return db.ref('esp32/global_command/ping').set(pingId);
-    }
-}
+};
