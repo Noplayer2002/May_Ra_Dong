@@ -23,22 +23,28 @@ export const DeviceService = {
 
     async broadcastPing() {
     const currentPing = Date.now().toString();
+    // 1. Gửi lệnh Ping
     await db.ref('esp32/global_command/ping').set(currentPing);
 
     return new Promise((resolve) => {
         setTimeout(async () => {
-            // Lấy snapshot mới nhất từ Firebase sau 3 giây chờ thiết bị hồi đáp
+            // 2. LẤY DỮ LIỆU MỚI NHẤT VỪA CẬP NHẬT TRÊN FIREBASE (Không dùng cache cũ)
             const snap = await db.ref('esp32/devices').once('value');
-            const latestDevices = snap.val() || {};
+            const devices = snap.val() || {};
             
             const updates = {};
-            Object.keys(latestDevices).forEach(deviceId => {
-                const pongValue = latestDevices[deviceId]?.info?.pong?.toString() || '';
-                if (pongValue !== currentPing) {
+
+            Object.keys(devices).forEach(deviceId => {
+                const dev = devices[deviceId];
+                const pong = dev?.info?.pong?.toString() || '';
+
+                // 3. Nếu pong khớp -> Giữ nguyên (hoặc set online), nếu KHÔNG khớp mới set offline
+                if (pong !== currentPing) {
                     updates[`${deviceId}/info/status`] = 'offline';
                 }
             });
 
+            // 4. Cập nhật
             if (Object.keys(updates).length > 0) {
                 await db.ref('esp32/devices').update(updates);
             }
