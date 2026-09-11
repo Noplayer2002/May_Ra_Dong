@@ -9,15 +9,16 @@ export const DeviceService = {
         return db.ref(`esp32/devices/${deviceId}/command/scan_wifi`).set(true);
     },
 
-    // Dùng .update() để chỉ ghi đè đúng các trường truyền vào
-    updateWifi(deviceId, changedData) {
-        return db.ref(`esp32/devices/${deviceId}/wifi`).update(changedData);
+    saveWifi(deviceId, ssid, pass) {
+        return db.ref(`esp32/devices/${deviceId}/wifi`).set({ ssid, pass });
     },
 
+    // Dùng .update() thay vì .set() để chỉ đổi trường được chỉ định
     updateTcp(deviceId, changedData) {
         return db.ref(`esp32/devices/${deviceId}/tcp`).update(changedData);
     },
 
+    // Dùng .update() thay vì .set() để chỉ đổi đúng các tham số thay đổi
     updatePlasma(deviceId, changedData) {
         return db.ref(`esp32/devices/${deviceId}/plasma`).update(changedData);
     },
