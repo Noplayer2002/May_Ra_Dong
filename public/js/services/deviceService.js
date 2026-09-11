@@ -102,3 +102,4 @@ export const DeviceService = {
             }, 4500); // 4.5 giây là thời gian vàng đủ cho mạng Wi-Fi và SSL
         });
     }
+}
