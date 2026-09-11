@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
     pingBtn.onclick = async () => {
         pingBtn.disabled = true;
         pingBtn.textContent = "⏳ Đang phát sóng...";
-        await DeviceService.broadcastPing(AppState.devices);
+        
         pingBtn.disabled = false;
         pingBtn.textContent = "⚡ Quét Trạng Thái (Global Ping)";
     };
