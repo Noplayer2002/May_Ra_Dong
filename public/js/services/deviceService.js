@@ -28,40 +28,29 @@ function broadcastPing() {
     btn.disabled = true;
     btn.textContent = "⏳ Đang phát sóng...";
 
-    // 1. LƯU LẠI PONG CŨ CỦA TẤT CẢ THIẾT BỊ TRƯỚC KHI PING
-    const oldPongs = {};
-    Object.keys(devicesDataCache).forEach(id => {
-        const info = devicesDataCache[id].info || {};
-        oldPongs[id] = (info.pong || '').toString();
-    });
+    // 1. Tạo mã Ping duy nhất cho lần quét này
+    const currentPing = Date.now().toString();
+    db.ref('esp32/global_command/ping').set(currentPing);
 
-    // 2. Gửi lệnh Ping để đánh thức ESP32
-    db.ref('esp32/global_command/ping').set(Date.now().toString());
-
-    // 3. Chờ 3 giây
+    // 2. Chờ 3 giây cho ESP32 nhận và đẩy Pong lên
     setTimeout(() => {
         const updates = {};
-        
+
         Object.keys(devicesDataCache).forEach(deviceId => {
             const dev = devicesDataCache[deviceId];
-            const info = dev?.info || {};
-            
-            const currentStatus = (info.status || '').toLowerCase();
-            const newPong = (info.pong || '').toString();
+            const pongData = (dev?.info?.pong || '').toString();
 
-            // LOGIC CỦA BẠN: 
-            // - Nếu Pong MỚI khác Pong CŨ (tức là ESP32 có cập nhật dữ liệu)
-            // - HOẶC thiết bị đang báo Online / Running
-            // -> LÀ THIẾT BỊ SỐNG -> BỎ QUA KHÔNG LÀM GÌ CẢ!
-            if (newPong !== oldPongs[deviceId] || currentStatus === 'online' || currentStatus === 'running') {
-                return; 
+            // KIỂM TRA: Pong có chứa mã Ping vừa phát hay không?
+            if (pongData.includes(currentPing)) {
+                // -> ESP32 CÓ PHẢN HỒI (CÒN SỐNG) -> BỎ QUA, GIỮ NGUYÊN!
+                return;
             }
 
-            // Chỉ con nào PONG KHÔNG ĐỔI và cũng KHÔNG ONLINE mới bị ép về offline
+            // -> ESP32 KHÔNG PHẢN HỒI (ĐÃ CHẾT) -> ĐỘC QUYỀN GÁN OFFLINE
             updates[`${deviceId}/info/status`] = 'offline';
         });
 
-        // 4. Đẩy lệnh offline lên Firebase cho các máy đã chết
+        // 3. Ghi đè offline cho các máy chết lên Firebase
         if (Object.keys(updates).length > 0) {
             db.ref('esp32/devices').update(updates).then(() => {
                 btn.disabled = false;
