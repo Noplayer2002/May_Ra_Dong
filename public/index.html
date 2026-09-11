@@ -43,12 +43,27 @@
         .device-row:last-child { border-bottom: none; }
         .device-name { font-weight: bold; font-size: 16px; color: #333; }
         
+        /* 4 TRẠNG THÁI STATUS CHUẨN */
         .status-badge { display: flex; align-items: center; font-size: 13px; font-weight: bold; }
         .dot { width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+
         .online-text { color: #4CAF50; }
-        .offline-text { color: #f44336; }
         .dot.online { background-color: #4CAF50; box-shadow: 0 0 5px #4CAF50; }
-        .dot.offline { background-color: #f44336; }
+
+        .running-text { color: #2196F3; }
+        .dot.running { background-color: #2196F3; box-shadow: 0 0 6px #2196F3; animation: pulse 1.2s infinite; }
+
+        .error-text { color: #f44336; }
+        .dot.error { background-color: #f44336; box-shadow: 0 0 6px #f44336; }
+
+        .offline-text { color: #9e9e9e; }
+        .dot.offline { background-color: #9e9e9e; }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
 
         .row { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
         .row:last-child { border-bottom: none; }
@@ -144,6 +159,8 @@
             
             <div id="config" class="tab-content">
                 <div class="info-item"><span class="info-label">📡 Trạng thái:</span><span class="info-value" id="network-status">...</span></div>
+                <div class="info-item"><span class="info-label">⚙️ Máy trạng thái (FSM):</span><span class="info-value" id="lpc-fsm">N/A</span></div>
+                <div class="info-item"><span class="info-label">🚨 Mã lỗi bo mạch (ERR):</span><span class="info-value" id="lpc-err">0x0000</span></div>
                 <div class="info-item"><span class="info-label">🌐 IP:</span><span class="info-value" id="ip-address">N/A</span></div>
                 <div class="info-item"><span class="info-label">🔗 MAC:</span><span class="info-value" id="mac-address">N/A</span></div>
                 <div class="info-item"><span class="info-label">🔋 Pin (Battery):</span><span class="info-value" id="battery-level">N/A</span></div>
@@ -233,6 +250,20 @@
         let isScanningWifi = false;
         let currentDeviceRecords = {};
 
+        // HÀM PHÂN GIẢI 4 TRẠNG THÁI: Online / Running / Error / Offline
+        function parseStatusInfo(statusRaw) {
+            const s = (statusRaw || 'offline').toString().toLowerCase();
+            if (s === 'running') {
+                return { label: 'Running (Đang chạy)', cls: 'running', textCls: 'running-text' };
+            } else if (s === 'error') {
+                return { label: 'Error (Lỗi)', cls: 'error', textCls: 'error-text' };
+            } else if (s === 'online') {
+                return { label: 'Online (Chờ)', cls: 'online', textCls: 'online-text' };
+            } else {
+                return { label: 'Offline (Mất kết nối)', cls: 'offline', textCls: 'offline-text' };
+            }
+        }
+
         function getBatteryPercentage(voltage) {
             const curve = [
                 { v: 12.15, p: 100 }, { v: 11.85, p: 90 }, { v: 11.60, p: 80 },
@@ -267,12 +298,12 @@
             let html = '';
             Object.keys(devicesDataCache).forEach(id => {
                 if (id.toLowerCase().includes(search)) {
-                    const status = (devicesDataCache[id].info && devicesDataCache[id].info.status === 'online');
+                    const st = parseStatusInfo(devicesDataCache[id].info && devicesDataCache[id].info.status);
                     html += `
                         <div class="device-row" onclick="selectDevice('${id}')">
                             <div class="device-name">${id}</div>
-                            <div class="status-badge ${status ? 'online-text' : 'offline-text'}">
-                                <div class="dot ${status ? 'online' : 'offline'}"></div> ${status ? 'Online' : 'Offline'}
+                            <div class="status-badge ${st.textCls}">
+                                <div class="dot ${st.cls}"></div> ${st.label}
                             </div>
                         </div>`;
                 }
@@ -395,7 +426,6 @@
             return { parsed: result, raw: normalized };
         }
 
-        // 🟢 ĐỌC DỮ LIỆU TỪ NHÁNH /history CỦA THIẾT BỊ
         function renderHL7RecordsDropdown(device) {
             const selectEl = document.getElementById('record-select');
             const prevSelected = selectEl.value;
@@ -403,7 +433,6 @@
             currentDeviceRecords = {};
 
             const historyNode = device.history || {};
-            // Sắp xếp mã bản tin giảm dần (mới nhất lên đầu)
             const keys = Object.keys(historyNode).sort().reverse();
             let count = 0;
 
@@ -458,7 +487,6 @@
             document.getElementById('hl7-timestamp').textContent = formatHL7Date(msh.timestamp);
             document.getElementById('hl7-sender').textContent = `${msh.sender || 'N/A'} (${msh.facility || 'N/A'})`;
 
-            // Hiển thị Zone (NTE)
             const zoneContainer = document.getElementById('hl7-zones');
             zoneContainer.innerHTML = '';
             if (data.parsed.notes.length === 0) {
@@ -473,7 +501,6 @@
                 });
             }
 
-            // Hiển thị danh sách túi máu (OBX)
             const bagsTbody = document.getElementById('hl7-bags-body');
             bagsTbody.innerHTML = '';
             if (data.parsed.obxList.length === 0) {
@@ -490,7 +517,6 @@
                 });
             }
 
-            // Raw HL7
             document.getElementById('hl7-raw-content').textContent = data.raw;
         }
 
@@ -505,15 +531,23 @@
         function updateUI(device) {
             if (!device) return;
             const info = device.info || {}, tcp = device.tcp || {}, plasma = device.plasma || {}, wifi = device.wifi || {};
-            const isOnline = (info.status === 'online');
-            const stEl = document.getElementById('network-status');
             
-            stEl.textContent = isOnline ? '🟢 Online' : '🔴 Offline';
-            stEl.style.color = isOnline ? '#4CAF50' : '#f44336';
+            // CẬP NHẬT 4 TRẠNG THÁI STATUS
+            const st = parseStatusInfo(info.status);
+            const stEl = document.getElementById('network-status');
+            stEl.textContent = st.label;
+            stEl.className = 'info-value ' + st.textCls;
+
+            // HIỂN THỊ FSM VÀ MÃ LỖI
+            document.getElementById('lpc-fsm').textContent = info.lpc_fsm !== undefined ? `0x${Number(info.lpc_fsm).toString(16).toUpperCase()}` : 'N/A';
+            const errVal = info.lpc_err !== undefined ? Number(info.lpc_err) : 0;
+            const errEl = document.getElementById('lpc-err');
+            errEl.textContent = `0x${errVal.toString(16).toUpperCase().padStart(4, '0')}`;
+            errEl.style.color = (errVal !== 0) ? '#f44336' : '#333';
+
             document.getElementById('ip-address').textContent = info.ip || 'N/A';
             document.getElementById('mac-address').textContent = info.mac || 'N/A';
             
-            // Xử lý Pin
             let batteryText = 'N/A';
             if (info.pin !== undefined && info.pin !== null) {
                 let raw = parseFloat(info.pin);
@@ -522,7 +556,6 @@
             }
             document.getElementById('battery-level').textContent = batteryText;
             
-            // Wi-Fi
             document.getElementById('ssid').value = wifi.ssid || info.ssid || '';
             document.getElementById('wifi-pass').value = wifi.pass || '';
 
@@ -559,28 +592,33 @@
             document.getElementById('pid_ti').value = plasma.pid_ti ?? '';
             document.getElementById('pid_td').value = plasma.pid_td ?? '';
 
-            // Cập nhật Tab Bản ghi HL7 từ nhánh history
             renderHL7RecordsDropdown(device);
         }
 
+        // =========================================================================
+        // HÀM PING MỚI: CHỈ ĐỔI THÀNH "OFFLINE" NẾU THIẾT BỊ KHÔNG PHẢN HỒI
+        // NẾU CÓ PHẢN HỒI, GIỮ NGUYÊN TRẠNG THÁI THẬT (ONLINE/RUNNING/ERROR) DO ESP32 TỰ GỬI
+        // =========================================================================
         function broadcastPing() {
             const btn = document.getElementById('btn-check-device-status');
             btn.disabled = true;
             btn.textContent = "⏳ Đang phát sóng...";
 
-            const currentPing = Date.now();
+            const currentPing = Date.now().toString();
             db.ref('esp32/global_command/ping').set(currentPing);
 
             setTimeout(() => {
                 const updates = {};
                 Object.keys(devicesDataCache).forEach(deviceId => {
                     const device = devicesDataCache[deviceId];
-                    const pongValue = (device.info && device.info.pong) ? device.info.pong : 0;
-                    if (pongValue === currentPing) {
-                        updates[`${deviceId}/info/status`] = 'online';
-                    } else {
+                    const pongValue = (device.info && device.info.pong) ? device.info.pong.toString() : '';
+
+                    // NẾU KHÔNG TRẢ LỜI PONG (Mất nguồn / mất mạng) -> Gán Offline
+                    if (pongValue !== currentPing) {
                         updates[`${deviceId}/info/status`] = 'offline';
                     }
+                    // NẾU CÓ TRẢ LỜI PONG -> KHÔNG ghi đè chữ 'online' vào đây!
+                    // ESP32 đã tự báo trạng thái thực của nó (online/Running/Error) vào node status.
                 });
 
                 if (Object.keys(updates).length > 0) {
