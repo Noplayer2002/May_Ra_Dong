@@ -50,7 +50,7 @@ export const UIRenderer = {
         });
     },
 
-    updateDeviceDetails(device) {
+updateDeviceDetails(device) {
         if (!device) return;
         const { info = {}, tcp = {}, plasma = {}, wifi = {} } = device;
 
@@ -76,17 +76,30 @@ export const UIRenderer = {
         }
         document.getElementById('battery-level').textContent = batteryText;
 
-        document.getElementById('ssid').value = wifi.ssid || info.ssid || '';
-        document.getElementById('wifi-pass').value = wifi.pass || '';
-        document.getElementById('server_ip').value = tcp.server_ip || '';
-        document.getElementById('server_port').value = tcp.server_port || '';
+        // Chỉ cập nhật vào input nếu người dùng KHÔNG đang trực tiếp gõ vào ô đó
+        if (document.activeElement !== document.getElementById('ssid')) {
+            document.getElementById('ssid').value = wifi.ssid || info.ssid || '';
+        }
+        if (document.activeElement !== document.getElementById('wifi-pass')) {
+            document.getElementById('wifi-pass').value = wifi.pass || '';
+        }
+        if (document.activeElement !== document.getElementById('server_ip')) {
+            document.getElementById('server_ip').value = tcp.server_ip || '';
+        }
+        if (document.activeElement !== document.getElementById('server_port')) {
+            document.getElementById('server_port').value = tcp.server_port || '';
+        }
 
         const plasmaFields = ['sp_t_operator', 'sp_t_hot', 'sp_fan', 't_max', 't_min', 
                               't_offset_1', 'r_cal_1', 't_offset_2', 'r_cal_2', 
                               't_offset_3', 'r_cal_3', 't_offset_4', 'r_cal_4', 
                               'pid_kp', 'pid_ti', 'pid_td'];
         plasmaFields.forEach(field => {
-            document.getElementById(field).value = plasma[field] ?? '';
+            const inputEl = document.getElementById(field);
+            // Giữ nguyên dữ liệu nếu người dùng đang chỉnh sửa ô này
+            if (inputEl && document.activeElement !== inputEl) {
+                inputEl.value = plasma[field] ?? '';
+            }
         });
     },
 
