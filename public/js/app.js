@@ -103,6 +103,9 @@ document.addEventListener('DOMContentLoaded', () => {
         pingBtn.disabled = true;
         pingBtn.textContent = "⏳ Đang phát sóng...";
         
+        // KHÔNG truyền AppState.devices vào nữa
+        await DeviceService.broadcastPing(); 
+        
         pingBtn.disabled = false;
         pingBtn.textContent = "⚡ Quét Trạng Thái (Global Ping)";
     };
