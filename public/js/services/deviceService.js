@@ -43,23 +43,35 @@ export const DeviceService = {
             }, 3000);
         });
     }
-    async broadcastPing() {
+async broadcastPing() {
         const currentPing = Date.now().toString();
         
+        console.log("🚀 [PING PHÁT ĐI]:", currentPing);
         await db.ref('esp32/global_command/ping').set(currentPing);
 
         return new Promise((resolve) => {
             setTimeout(async () => {
-                // 2. TỰ LẤY DỮ LIỆU TƯƠI MỚI NHẤT TỪ SERVER (Không phụ thuộc vào biến truyền vào)
                 const snapshot = await db.ref('esp32/devices').once('value');
                 const freshDevices = snapshot.val() || {};
 
                 const updates = {};
                 Object.keys(freshDevices).forEach(deviceId => {
                     const dev = freshDevices[deviceId];
-                    const pongValue = dev?.info?.pong ? dev.info.pong.toString() : '';
-                    // So sánh trực tiếp với dữ liệu trên Server
-                    if (pongValue !== currentPing) {
+                    let rawPong = dev?.info?.pong ? dev.info.pong.toString() : '';
+
+                    // 1. LÀM SẠCH CHUỖI: Xóa toàn bộ dấu ngoặc kép ", ', dấu cách, xuống dòng \r \n
+                    const cleanPong = rawPong.replace(/["'\r\n\s]/g, '');
+                    const cleanPing = currentPing.replace(/["'\r\n\s]/g, '');
+
+                    console.log(`🔍 So sánh máy [${deviceId}]:`);
+                    console.log(`   - Ping Web phát : [${cleanPing}]`);
+                    console.log(`   - Pong DB nhận  : [${cleanPong}]`);
+
+                    // 2. SO SÁNH SAU KHI ĐÃ LÀM SẠCH
+                    if (cleanPong === cleanPing) {
+                        console.log(`   => ✅ KHỚP 100%! GIỮ NGUYÊN ONLINE.`);
+                    } else {
+                        console.log(`   => ❌ KHÔNG KHỚP! Chuyển thành Offline.`);
                         updates[`${deviceId}/info/status`] = 'offline';
                     }
                 });
@@ -68,7 +80,6 @@ export const DeviceService = {
                     await db.ref('esp32/devices').update(updates);
                 }
                 resolve();
-            }, 4000); // Tăng lên 4000ms để ESP32 có đủ thời gian hoàn tất SSL
+            }, 4000);
         });
     }
-};
