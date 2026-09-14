@@ -200,44 +200,34 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-// 7. HL7 Record Select & Copy
-    document.getElementById('record-select').onchange = (e) => {
-        const val = e.target.value;
-        if (val && AppState.currentDeviceRecords[val]) {
-            UIRenderer.displayHL7Detail(AppState.currentDeviceRecords[val], val);
-        }
-    };
-
-    document.getElementById('btn-copy-hl7').onclick = () => {
-        const raw = document.getElementById('hl7-raw-content').textContent;
-        if (raw) {
-            navigator.clipboard.writeText(raw).then(() => alert("📋 Đã sao chép HL7!"));
-        }
-    };
-
-    // VIẾT AN TOÀN NHƯ THẾ NÀY:
-    const exportBtn = document.getElementById('btn-export-sheet');
-    if (exportBtn) {
-        exportBtn.onclick = async () => {
+// Dùng cơ chế bắt sự kiện toàn cục: Bấm là 100% ăn lệnh, không bao giờ bị liệt
+    document.addEventListener('click', async (e) => {
+        if (e.target && e.target.id === 'btn-export-sheet') {
+            const btn = e.target;
             const selectedKey = document.getElementById('record-select').value;
-            if (!selectedKey || !AppState.selectedDeviceId) {
+            
+            if (!AppState.selectedDeviceId) {
+                alert("⚠️ Bạn chưa chọn thiết bị!");
+                return;
+            }
+            if (!selectedKey) {
                 alert("⚠️ Vui lòng chọn một bản tin ở danh sách trên trước khi xuất!");
                 return;
             }
 
             try {
-                exportBtn.textContent = "⏳ Đang xuất...";
-                exportBtn.disabled = true;
+                btn.textContent = "⏳ Đang gửi sang Sheets...";
+                btn.disabled = true;
 
                 await DeviceService.exportHL7ToGoogleSheet(AppState.selectedDeviceId, selectedKey);
                 
-                alert("✅ Dữ liệu đã được gửi sang Google Sheet!");
+                alert("✅ Dữ liệu đã được đẩy lên Google Sheet thành công!");
             } catch (err) {
                 alert("❌ Lỗi khi xuất: " + err.message);
             } finally {
-                exportBtn.textContent = "📊 Xuất Google Sheets";
-                exportBtn.disabled = false;
+                btn.textContent = "📊 Xuất Google Sheets";
+                btn.disabled = false;
             }
-        };
-    }
+        }
+    });
 });
