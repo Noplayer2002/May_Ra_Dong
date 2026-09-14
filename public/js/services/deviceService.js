@@ -1,6 +1,8 @@
 import { db } from '../config/firebase.js';
 import { parseHL7String } from '../parsers/hl7Parser.js';
+
 const GOOGLE_SHEET_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyNcSlXiOoCCAe9ZuEMQDi-ZID4O9t_KV2Vd_HYy5uXyQdBKFbjegzZjgWirnBlNWoB/exec";
+
 export const DeviceService = {
     subscribeDevices(callback) {
         return db.ref('esp32/devices').on('value', snap => callback(snap.val() || {}));
@@ -14,12 +16,10 @@ export const DeviceService = {
         return db.ref(`esp32/devices/${deviceId}/wifi`).set({ ssid, pass });
     },
 
-    // Dùng .update() thay vì .set() để chỉ đổi trường được chỉ định
     updateTcp(deviceId, changedData) {
         return db.ref(`esp32/devices/${deviceId}/tcp`).update(changedData);
     },
 
-    // Dùng .update() thay vì .set() để chỉ đổi đúng các tham số thay đổi
     updatePlasma(deviceId, changedData) {
         return db.ref(`esp32/devices/${deviceId}/plasma`).update(changedData);
     },
@@ -49,47 +49,42 @@ export const DeviceService = {
                 resolve();
             }, 3000);
         });
-    }
+    }, // <-- ĐÃ THÊM DẤU PHẨY Ở ĐÂY
+
     async saveHL7Record(deviceId, rawHL7Text) {
         if (!deviceId || !rawHL7Text) throw new Error("Thiếu deviceId hoặc rawHL7Text");
 
-        // Gọi hàm parse sẵn có (không sửa logic hàm này)
         const parseResult = parseHL7String(rawHL7Text);
         if (!parseResult) throw new Error("Chuỗi HL7 không hợp lệ");
 
         const { parsed, raw } = parseResult;
         
-        // Tạo mã bản ghi chuẩn: YYYYMMDDHHMMSS_MsgID (dễ sort và tìm kiếm)
         const timePart = parsed.msh.timestamp || Date.now().toString();
         const msgId = parsed.msh.msgId || Math.random().toString(36).substring(2, 7);
         const recordKey = `${timePart}_${msgId}`;
 
-        // Cấu trúc lưu trữ nâng cấp
         const recordData = {
-            raw_hl7: raw,                               // Phục vụ UI hiển thị hiện tại
+            raw_hl7: raw,
             meta: {
                 msg_id: parsed.msh.msgId || '',
                 batch_id: parsed.pid.batchId || 'UNKNOWN',
                 timestamp: parsed.msh.timestamp || '',
                 sender: parsed.msh.sender || '',
                 total_bags: parsed.obxList.length || 0,
-                // Lưu danh sách barcode thu gọn để tìm kiếm nhanh
                 barcodes: parsed.obxList.map(b => b.barcode).filter(Boolean),
-                saved_at: firebase.database.ServerValue.TIMESTAMP // Timestamp server
+                saved_at: firebase.database.ServerValue.TIMESTAMP
             }
         };
 
-        // Lưu vào đường dẫn history
         await db.ref(`esp32/devices/${deviceId}/history/${recordKey}`).set(recordData);
         return { recordKey, recordData };
-    }
-async exportHL7ToGoogleSheet(deviceId, recordKey) {
-        // 1. Đọc dữ liệu bản tin trực tiếp từ Firebase
+    }, // <-- ĐÃ THÊM DẤU PHẨY Ở ĐÂY
+
+    async exportHL7ToGoogleSheet(deviceId, recordKey) {
         const snap = await db.ref(`esp32/devices/${deviceId}/history/${recordKey}`).once('value');
         const record = snap.val();
         if (!record) throw new Error("Không tìm thấy bản ghi HL7 này trên Database");
 
-        // Parse để chuẩn hóa dữ liệu đẩy lên (dùng hàm parse sẵn có)
         const parseResult = parseHL7String(record.raw_hl7);
         const { msh, pid, obxList } = parseResult ? parseResult.parsed : { msh:{}, pid:{}, obxList:[] };
 
@@ -103,10 +98,9 @@ async exportHL7ToGoogleSheet(deviceId, recordKey) {
             rawHL7: record.raw_hl7
         };
 
-        // 2. Gửi dữ liệu qua Apps Script
-        const response = await fetch(GOOGLE_SHEET_WEBHOOK_URL, {
+        await fetch(GOOGLE_SHEET_WEBHOOK_URL, {
             method: 'POST',
-            mode: 'no-cors', // Cần thiết khi gọi Google Apps Script từ browser
+            mode: 'no-cors',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
