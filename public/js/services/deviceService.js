@@ -49,7 +49,7 @@ export const DeviceService = {
                 resolve();
             }, 3000);
         });
-    }, // <-- ĐÃ THÊM DẤU PHẨY Ở ĐÂY
+    },
 
     async saveHL7Record(deviceId, rawHL7Text) {
         if (!deviceId || !rawHL7Text) throw new Error("Thiếu deviceId hoặc rawHL7Text");
@@ -78,7 +78,7 @@ export const DeviceService = {
 
         await db.ref(`esp32/devices/${deviceId}/history/${recordKey}`).set(recordData);
         return { recordKey, recordData };
-    }, // <-- ĐÃ THÊM DẤU PHẨY Ở ĐÂY
+    },
 
     async exportHL7ToGoogleSheet(deviceId, recordKey) {
         const snap = await db.ref(`esp32/devices/${deviceId}/history/${recordKey}`).once('value');
