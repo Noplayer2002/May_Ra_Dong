@@ -214,4 +214,27 @@ document.addEventListener('DOMContentLoaded', () => {
             navigator.clipboard.writeText(raw).then(() => alert("📋 Đã sao chép HL7!"));
         }
     };
+    document.getElementById('btn-export-sheet').onclick = async () => {
+    const selectedKey = document.getElementById('record-select').value;
+    if (!selectedKey || !AppState.selectedDeviceId) {
+        alert("Vui lòng chọn một bản tin để xuất!");
+        return;
+    }
+
+    try {
+        const btn = document.getElementById('btn-export-sheet');
+        btn.textContent = "⏳ Đang xuất...";
+        btn.disabled = true;
+
+        await DeviceService.exportHL7ToGoogleSheet(AppState.selectedDeviceId, selectedKey);
+        
+        alert("✅ Dữ liệu đã được gửi sang Google Sheet!");
+    } catch (err) {
+        alert("❌ Lỗi khi xuất: " + err.message);
+    } finally {
+        const btn = document.getElementById('btn-export-sheet');
+        btn.textContent = "📊 Xuất ra Google Sheets";
+        btn.disabled = false;
+    }
+};
 });
