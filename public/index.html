@@ -95,47 +95,53 @@
             </div>
 
             <div id="records" class="tab-content">
-                <div class="row" style="border:none; padding-bottom: 5px;">
-                    <div class="label" style="width: 140px;">Chọn bản tin:</div>
-                    <div class="input-box">
-                        <select id="record-select">
-                            <option value="">-- Chọn mã bản tin --</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div id="record-empty-state" style="text-align: center; color: #888; padding: 30px 10px;">
-                    Không tìm thấy bản ghi trong nhánh <code>history</code> của thiết bị này.
-                </div>
-
-                <div id="record-detail-view" style="display: none;">
-                    <div class="record-card">
-                        <div class="info-item"><span class="info-label">🔖 Mã bản tin:</span><span class="info-value" id="hl7-msg-id">-</span></div>
-                        <div class="info-item"><span class="info-label">📦 Mã mẻ (Batch ID):</span><span class="info-value" id="hl7-batch-id">-</span></div>
-                        <div class="info-item"><span class="info-label">🕒 Thời gian HL7:</span><span class="info-value" id="hl7-timestamp">-</span></div>
-                        <div class="info-item"><span class="info-label">🏥 Thiết bị / Nơi gửi:</span><span class="info-value" id="hl7-sender">-</span></div>
-                    </div>
-
-                    <div class="section-title">Thông Số Zone Giã Đông (NTE)</div>
-                    <div id="hl7-zones" style="margin-top: 10px;"></div>
-
-                    <div class="section-title">Danh Sách Túi Huyết Tương (OBX: 1 - 16)</div>
-                    <table class="hl7-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 50px;">Vị trí</th>
-                                <th>Mã Barcode / Túi máu</th>
-                                <th style="width: 70px; text-align: center;">Trạng thái</th>
-                            </tr>
-                        </thead>
-                        <tbody id="hl7-bags-body"></tbody>
-                    </table>
-
-                    <div class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
-                        <span>Dữ Liệu Thô (raw_hl7)</span>
-                        <div>
-                            <button type="button" class="btn-secondary" id="btn-copy-hl7" style="font-size: 11px; padding: 4px 8px;">📋 Sao chép</button>
-                            <button type="button" class="btn-secondary" id="btn-export-sheet" style="font-size: 11px; padding: 4px 8px; margin-left: 5px; background-color: #2e7d32;">📊 Xuất Google Sheets</button>
+                            <!-- Thanh công cụ Google Sheets -->
+                            <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                                <a href="https://docs.google.com/spreadsheets/d/1_TAY_LINK_SHEET_CUA_BAN_VAO_DAY/edit" 
+                                   target="_blank" 
+                                   class="btn btn-blue" 
+                                   style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center; margin: 0; flex: 1;">
+                                    📊 Mở Trực Tiếp Google Sheets
+                                </a>
+                                <button type="button" class="btn btn-orange" id="btn-clear-all-history" style="margin: 0; width: auto;">
+                                    🧹 Xóa Sạch Rác History Trên DB
+                                </button>
+                            </div>
+            
+                            <div id="sheet-sync-status" style="padding: 10px; background: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 6px; color: #2e7d32; font-size: 13px; margin-bottom: 15px; text-align: center;">
+                                ⚡ Hệ thống đang ở chế độ <b>Tự Động Đồng Bộ</b>: Khi ESP32 gửi bản tin, dữ liệu sẽ tự chuyển sang Sheets và xóa ngay trên Firebase.
+                            </div>
+            
+                            <!-- Khung hiển thị chi tiết bản tin HL7 thời gian thực mới nhất -->
+                            <div id="record-detail-view" style="display: block;">
+                                <div class="record-card">
+                                    <div class="info-item"><span class="info-label">🔖 Mã bản tin vừa nhận:</span><span class="info-value" id="hl7-msg-id">Chưa có bản tin mới</span></div>
+                                    <div class="info-item"><span class="info-label">📦 Mã mẻ (Batch ID):</span><span class="info-value" id="hl7-batch-id">-</span></div>
+                                    <div class="info-item"><span class="info-label">🕒 Thời gian HL7:</span><span class="info-value" id="hl7-timestamp">-</span></div>
+                                    <div class="info-item"><span class="info-label">🏥 Thiết bị / Nơi gửi:</span><span class="info-value" id="hl7-sender">-</span></div>
+                                </div>
+            
+                                <div class="section-title">Thông Số Zone Giã Đông (NTE)</div>
+                                <div id="hl7-zones" style="margin-top: 10px;"></div>
+            
+                                <div class="section-title">Danh Sách Túi Huyết Tương (OBX: 1 - 16)</div>
+                                <table class="hl7-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 50px;">Vị trí</th>
+                                            <th>Mã Barcode / Túi máu</th>
+                                            <th style="width: 70px; text-align: center;">Trạng thái</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="hl7-bags-body"></tbody>
+                                </table>
+            
+                                <div class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span>Dữ Liệu Thô (raw_hl7 vừa nhận)</span>
+                                    <button type="button" class="btn-secondary" id="btn-copy-hl7" style="font-size: 11px; padding: 4px 8px;">📋 Sao chép</button>
+                                </div>
+                                <pre class="raw-box" id="hl7-raw-content"></pre>
+                            </div>
                         </div>
                     </div>
                     <pre class="raw-box" id="hl7-raw-content"></pre>
