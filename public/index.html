@@ -100,32 +100,32 @@
                 </form>
             </div>
 
-            <!-- TAB 5: BẢN GHI HL7 NHÚNG TRỰC TIẾP GOOGLE SHEETS -->
-            <div id="records" class="tab-content">
-                <!-- Thanh công cụ điều khiển Sheet -->
-                <div style="display: flex; gap: 10px; margin-bottom: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+            <!-- TAB 5: BẢN GHI HL7 - KHUNG GOOGLE SHEETS CHIẾM TRỌN MÀN HÌNH -->
+            <div id="records" class="tab-content" style="padding: 10px 0 0 0;">
+                <!-- Thanh công cụ tinh gọn -->
+                <div style="display: flex; gap: 10px; margin-bottom: 8px; align-items: center; justify-content: space-between; padding: 0 5px;">
+                    <div style="font-size: 13px; color: #2e7d32; font-weight: bold; display: flex; align-items: center; gap: 5px;">
+                        <span>⚡</span> Đồng bộ tự động Google Sheets
+                    </div>
                     <div style="display: flex; gap: 8px;">
-                        <button type="button" class="btn-secondary" id="btn-refresh-sheet" style="padding: 6px 12px; font-size: 13px;">
-                            🔄 Tải lại bảng tính
+                        <button type="button" class="btn-secondary" id="btn-refresh-sheet" style="padding: 5px 12px; font-size: 12px; border-radius: 4px; margin: 0;">
+                            🔄 Tải lại bảng
                         </button>
                         <a href="https://docs.google.com/spreadsheets/d/1jaLfUghym0DGokRXKbHBB35qx9IXLwIW4DnyRnJkThg/edit?gid=0#gid=0" 
                            target="_blank" 
                            class="btn-secondary" 
-                           style="text-decoration: none; padding: 6px 12px; font-size: 13px; display: inline-flex; align-items: center;">
+                           style="text-decoration: none; padding: 5px 12px; font-size: 12px; border-radius: 4px; margin: 0; display: inline-flex; align-items: center;">
                             ↗️ Mở tab lớn
                         </a>
                     </div>
-                    <button type="button" class="btn btn-orange" id="btn-clear-all-history" style="margin: 0; padding: 6px 12px; font-size: 13px; width: auto;">
-                        🧹 Xóa Rác History DB
-                    </button>
                 </div>
 
-                <!-- BẢNG GOOGLE SHEETS HIỂN THỊ TRỰC TIẾP -->
-                <div style="width: 100%; height: 600px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
+                <!-- BẢNG TÍNH GOOGLE SHEETS FULL KHUNG HÌNH -->
+                <div style="width: 100%; height: calc(100vh - 165px); min-height: 550px; border: 1px solid #d0d7de; border-radius: 6px; overflow: hidden; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
                     <iframe 
                         id="google-sheet-iframe"
                         src="https://docs.google.com/spreadsheets/d/1jaLfUghym0DGokRXKbHBB35qx9IXLwIW4DnyRnJkThg/edit?rm=minimal#gid=0" 
-                        style="width: 100%; height: 100%; border: none;"
+                        style="width: 100%; height: 100%; border: none; display: block;"
                         allow="autoplay">
                     </iframe>
                 </div>
