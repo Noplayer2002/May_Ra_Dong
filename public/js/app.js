@@ -30,9 +30,13 @@ function cleanupWifiScanData() {
 }
 // UI Page Navigations
 function showPage(pageId) {
+    // Nếu người dùng bấm quay lại màn hình chọn thiết bị
+    if (pageId === 'device-selection-page') {
+        cleanupWifiScanData(); // Xóa sạch wifi_list trước khi thoát
+        AppState.selectedDeviceId = null;
+    }
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById(pageId).classList.add('active');
-    if (pageId === 'device-selection-page') AppState.selectedDeviceId = null;
 }
 
 function switchTab(e, tabId) {
