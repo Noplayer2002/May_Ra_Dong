@@ -78,10 +78,10 @@ updateDeviceDetails(device) {
 
         // Chỉ cập nhật vào input nếu người dùng KHÔNG đang trực tiếp gõ vào ô đó
         if (document.activeElement !== document.getElementById('ssid')) {
-            document.getElementById('ssid').value = wifi.ssid || info.ssid || '';
+            document.getElementById('ssid').value = info.ssid || '';
         }
         if (document.activeElement !== document.getElementById('wifi-pass')) {
-            document.getElementById('wifi-pass').value = wifi.pass || '';
+            document.getElementById('wifi-pass').value = ''; 
         }
         if (document.activeElement !== document.getElementById('server_ip')) {
             document.getElementById('server_ip').value = tcp.server_ip || '';
