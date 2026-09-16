@@ -333,4 +333,29 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
     }
+    function selectDevice(id) {
+    AppState.selectedDeviceId = id;
+    document.getElementById('selected-device-name').textContent = id;
+    const device = AppState.devices[id];
+    
+    UIRenderer.updateDeviceDetails(device);
+    if (device.wifi_list) UIRenderer.renderWifiList(device.wifi_list, (ssid) => {
+        document.getElementById('ssid').value = ssid;
+        document.getElementById('wifi-pass').focus();
+    });
+
+    renderHL7Dropdown(device);
+    showPage('settings-page');
+
+    // --- TỰ ĐỘNG QUÉT & ĐẨY TOÀN BỘ BẢN GHI MỚI LÊN SHEETS RỒI XÓA ---
+    const historyNode = device.history || {};
+    Object.keys(historyNode).forEach(async (recordKey) => {
+        try {
+            console.log(`🚀 Tự động đồng bộ bản ghi ${recordKey} sang Sheet...`);
+            await DeviceService.exportHL7ToGoogleSheet(id, recordKey);
+        } catch (e) {
+            console.warn("Lỗi auto sync record:", e);
+        }
+    });
+}
 });
