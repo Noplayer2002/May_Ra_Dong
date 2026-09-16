@@ -2,7 +2,7 @@ import { DeviceService } from './services/deviceService.js';
 import { UIRenderer } from './ui/uiRenderer.js';
 
 // Central State
-const AppState = {
+const AppState = { 
     devices: {},
     selectedDeviceId: null,
     isScanningWifi: false,
