@@ -8,7 +8,26 @@ const AppState = {
     isScanningWifi: false,
     currentDeviceRecords: {}
 };
+// Hàm tự động dọn sạch wifi_list khi người dùng rời khỏi giao diện Wi-Fi
+function cleanupWifiScanData() {
+    const devId = AppState.selectedDeviceId;
+    if (!devId) return;
 
+    // 1. Xóa ngay lập tức trên Firebase
+    DeviceService.clearWifiList(devId);
+
+    // 2. Dọn sạch giao diện hiển thị danh sách Wi-Fi
+    const wifiBox = document.getElementById('scanned-wifi-list');
+    if (wifiBox) {
+        wifiBox.innerHTML = '<div style="color:#64748b; font-size:13px; text-align:center; padding:15px;">Phiên quét đã kết thúc. Bấm "Quét Wi-Fi" để tìm lại.</div>';
+    }
+
+    // 3. Xóa cache trong bộ nhớ tạm AppState
+    if (AppState.devices[devId]?.wifi_list) {
+        delete AppState.devices[devId].wifi_list;
+    }
+    console.log(`🧹 Đã tự động dọn sạch wifi_list của ${devId} do người dùng rời tab Wi-Fi.`);
+}
 // UI Page Navigations
 function showPage(pageId) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
