@@ -31,16 +31,17 @@ export const UIRenderer = {
     renderWifiList(wifiList, onSelectSSID) {
         const listEl = document.getElementById('scanned-wifi-list');
         if (!wifiList || wifiList.length === 0) {
-            listEl.innerHTML = '<div style="color:#999; font-size:13px; text-align:center; padding:15px;">Không có dữ liệu.</div>';
+            listEl.innerHTML = '<div style="color:#64748b; font-size:13px; text-align:center; padding:15px;">Không có dữ liệu.</div>';
             return;
         }
 
+        // Tinh giản: Chỉ lấy chấm màu Xanh / Vàng / Đỏ theo cường độ sóng
         listEl.innerHTML = wifiList.map(w => {
-            let sigClass = w.rssi >= -65 ? 'sig-good' : (w.rssi >= -75 ? 'sig-medium' : 'sig-weak');
+            let dotClass = w.rssi >= -65 ? 'dot-green' : (w.rssi >= -75 ? 'dot-yellow' : 'dot-red');
             return `
                 <div class="wifi-item" data-ssid="${w.ssid}">
                     <div class="wifi-ssid">📶 ${w.ssid}</div>
-                    <div class="wifi-signal ${sigClass}">${w.rssi} dBm (CH:${w.channel || '?'})</div>
+                    <div class="wifi-dot ${dotClass}" title="Tín hiệu: ${w.rssi} dBm"></div>
                 </div>
             `;
         }).join('');
