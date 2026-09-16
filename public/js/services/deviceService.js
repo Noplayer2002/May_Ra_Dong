@@ -12,13 +12,31 @@ export const DeviceService = {
         return db.ref(`esp32/devices/${deviceId}/command/scan_wifi`).set(true);
     },
 
-    saveWifi(deviceId, ssid, pass) {
-        return db.ref(`esp32/devices/${deviceId}/wifi`).set({ ssid, pass });
-    },
-
-    updateTcp(deviceId, changedData) {
-        return db.ref(`esp32/devices/${deviceId}/tcp`).update(changedData);
-    },
+    // Thay thế hàm saveWifi cũ
+    async saveWifiCommandAndCleanup(deviceId, ssid, pass, timeoutMs = 10000) {
+        if (!deviceId || !ssid) throw new Error("Thiếu deviceId hoặc SSID");
+    
+        const wifiCmdRef = db.ref(`esp32/devices/${deviceId}/command/set_wifi`);
+    
+        // 1. Ghi thông tin Wi-Fi dạng lệnh tạm thời (Transient Command)
+        await wifiCmdRef.set({
+            ssid: ssid,
+            pass: pass || '',
+            sent_at: Date.now()
+        });
+    
+        // 2. Tự động xóa sạch node này trên Firebase sau một khoảng thời gian an toàn (mặc định 10s)
+        setTimeout(async () => {
+            try {
+                await wifiCmdRef.remove();
+                console.log(`🧹 Đã xóa sạch dữ liệu Wi-Fi của ${deviceId} trên Firebase.`);
+            } catch (err) {
+                console.warn("Lỗi khi tự động dọn dẹp node Wi-Fi:", err);
+            }
+        }, timeoutMs);
+    
+        return true;
+    }
 
     updatePlasma(deviceId, changedData) {
         return db.ref(`esp32/devices/${deviceId}/plasma`).update(changedData);
