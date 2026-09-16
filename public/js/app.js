@@ -290,14 +290,38 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // XUẤT THỦ CÔNG (Nếu người dùng muốn bấm chủ động): Gửi xong -> Xóa trên Firebase -> Cập nhật giao diện
+    // VIẾT AN TOÀN NHƯ THẾ NÀY:
     const exportBtn = document.getElementById('btn-export-sheet');
     if (exportBtn) {
         exportBtn.onclick = async () => {
             const selectedKey = document.getElementById('record-select').value;
-            const devId = AppState.selectedDeviceId;
+            if (!selectedKey || !AppState.selectedDeviceId) {
+                alert("⚠️ Vui lòng chọn một bản tin ở danh sách trên trước khi xuất!");
+                return;
+            }
+
+            try {
+                exportBtn.textContent = "⏳ Đang xuất...";
+                exportBtn.disabled = true;
+
+                await DeviceService.exportHL7ToGoogleSheet(AppState.selectedDeviceId, selectedKey);
+                
+                alert("✅ Dữ liệu đã được gửi sang Google Sheet!");
+            } catch (err) {
+                alert("❌ Lỗi khi xuất: " + err.message);
+            } finally {
+                exportBtn.textContent = "📊 Xuất Google Sheets";
+                exportBtn.disabled = false;
+            }
+        };
+    }
+    // Dùng cơ chế bắt sự kiện toàn cục: Bấm là 100% ăn lệnh, không bao giờ bị liệt
+    document.addEventListener('click', async (e) => {
+        if (e.target && e.target.id === 'btn-export-sheet') {
+            const btn = e.target;
+            const selectedKey = document.getElementById('record-select').value;
             
-            if (!devId) {
+            if (!AppState.selectedDeviceId) {
                 alert("⚠️ Bạn chưa chọn thiết bị!");
                 return;
             }
@@ -307,55 +331,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             try {
-                exportBtn.textContent = "⏳ Đang gửi & xóa...";
-                exportBtn.disabled = true;
+                btn.textContent = "⏳ Đang gửi sang Sheets...";
+                btn.disabled = true;
 
-                // Hàm này sẽ tự GỬI và TỰ XÓA trên Firebase
-                await DeviceService.exportHL7ToGoogleSheet(devId, selectedKey);
+                await DeviceService.exportHL7ToGoogleSheet(AppState.selectedDeviceId, selectedKey);
                 
-                alert("✅ Đã gửi lên Google Sheet và xóa bản ghi khỏi Database thành công!");
-
-                // Xóa khỏi cache local & refresh dropdown
-                delete AppState.currentDeviceRecords[selectedKey];
-                const optToRemove = document.querySelector(`#record-select option[value="${selectedKey}"]`);
-                if (optToRemove) optToRemove.remove();
-
-                // Đưa về trạng thái rỗng nếu hết bản ghi
-                if (Object.keys(AppState.currentDeviceRecords).length === 0) {
-                    document.getElementById('record-empty-state').style.display = 'block';
-                    document.getElementById('record-detail-view').style.display = 'none';
-                }
+                alert("✅ Dữ liệu đã được đẩy lên Google Sheet thành công!");
             } catch (err) {
                 alert("❌ Lỗi khi xuất: " + err.message);
             } finally {
-                exportBtn.textContent = "📊 Xuất Google Sheets";
-                exportBtn.disabled = false;
+                btn.textContent = "📊 Xuất Google Sheets";
+                btn.disabled = false;
             }
-        };
-    }
-    function selectDevice(id) {
-    AppState.selectedDeviceId = id;
-    document.getElementById('selected-device-name').textContent = id;
-    const device = AppState.devices[id];
-    
-    UIRenderer.updateDeviceDetails(device);
-    if (device.wifi_list) UIRenderer.renderWifiList(device.wifi_list, (ssid) => {
-        document.getElementById('ssid').value = ssid;
-        document.getElementById('wifi-pass').focus();
-    });
-
-    renderHL7Dropdown(device);
-    showPage('settings-page');
-
-    // --- TỰ ĐỘNG QUÉT & ĐẨY TOÀN BỘ BẢN GHI MỚI LÊN SHEETS RỒI XÓA ---
-    const historyNode = device.history || {};
-    Object.keys(historyNode).forEach(async (recordKey) => {
-        try {
-            console.log(`🚀 Tự động đồng bộ bản ghi ${recordKey} sang Sheet...`);
-            await DeviceService.exportHL7ToGoogleSheet(id, recordKey);
-        } catch (e) {
-            console.warn("Lỗi auto sync record:", e);
         }
     });
-}
 });
