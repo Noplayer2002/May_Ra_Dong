@@ -92,17 +92,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
         }
-            // Nút dọn sạch toàn bộ history còn tồn đọng trên Firebase
-            const btnClearHistory = document.getElementById('btn-clear-all-history');
-            if (btnClearHistory) {
-                btnClearHistory.onclick = async () => {
-                    if (!AppState.selectedDeviceId) return;
-                    if (confirm("Bạn có chắc chắn muốn xóa sạch toàn bộ node history của thiết bị này trên Firebase?")) {
-                        await DeviceService.clearAllHistory(AppState.selectedDeviceId);
-                        alert("🧹 Đã xóa sạch toàn bộ lịch sử trên Firebase!");
-                }
-            };
-        }
     });
 
     // 2. Search Box Filter
