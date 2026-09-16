@@ -1,376 +1,312 @@
-/* ==========================================================================
-   1. BIẾN HỆ THỐNG (DESIGN TOKENS)
-   Dễ dàng đổi theme, màu sắc thương hiệu tại đây
-   ========================================================================== */
 :root {
-    /* Màu thương hiệu & giao diện */
-    --primary-color: #9ab474;
-    --primary-light: #e8f5e9;
-    --primary-hover: #8ca564;
-    --bg-body: #f4f4f4;
-    --bg-card: #ffffff;
-    --border-color: #e0e0e0;
-    --border-dark: #ccc;
-    
-    /* Màu văn bản */
-    --text-main: #333333;
-    --text-muted: #555555;
-    --text-light: #999999;
-
-    /* 4 Màu trạng thái thiết bị */
-    --status-online: #4CAF50;
-    --status-running: #2196F3;
-    --status-error: #f44336;
-    --status-offline: #9e9e9e;
-
-    /* Màu nút bấm */
-    --btn-orange: #ff9800;
-    --btn-blue: #2196F3;
-    --btn-gray: #757575;
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --bg-body: #f8fafc;
+    --card-bg: #ffffff;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --border-color: #e2e8f0;
+    --radius: 10px;
+    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
 }
 
-/* ==========================================================================
-   2. RESET CƠ BẢN & TOÀN CỤC
-   ========================================================================== */
 * {
+    box-sizing: border-box;
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: var(--bg-body);
     color: var(--text-main);
-    line-height: 1.5;
+    min-height: 100vh;
 }
 
-/* ==========================================================================
-   3. BỐ CỤC CHÍNH & ĐIỀU HƯỚNG (LAYOUT & NAVIGATION)
-   ========================================================================== */
+/* Page Control */
 .page { display: none; }
 .page.active { display: block; }
 
-.tab-content { display: none; }
-.tab-content.active { display: block; }
-
+/* Top Bar */
 .top-bar {
-    background-color: var(--primary-color);
-    color: #fff;
-    padding: 15px 20px;
-    font-size: 20px;
-    font-weight: bold;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    background: #ffffff;
+    border-bottom: 1px solid var(--border-color);
+    padding: 12px 24px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    font-size: 16px;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 50;
 }
 
-.nav {
-    background-color: #e0e0e0;
-    display: flex;
-    border-bottom: 2px solid var(--primary-color);
-    overflow-x: auto;
-    white-space: nowrap;
-}
-
-.nav a {
-    padding: 12px 20px;
-    text-decoration: none;
-    color: var(--text-muted);
-    font-weight: bold;
-    border-right: 1px solid var(--border-dark);
-    transition: background 0.2s ease, color 0.2s ease;
-    cursor: pointer;
-    flex: 1;
-    text-align: center;
-}
-
-.nav a:hover {
-    background-color: #d5d5d5;
-}
-
-.nav a.active {
-    background-color: var(--bg-card);
-    color: var(--primary-color);
-    border-top: 3px solid var(--primary-color);
-    border-bottom: 2px solid var(--bg-card);
-    margin-bottom: -2px;
-}
-
+/* Main Container: Mở rộng tối đa 1400px */
 .container {
-    max-width: 650px;
-    margin: 20px auto;
-    background-color: var(--bg-card);
-    border: 1px solid var(--border-dark);
-    border-radius: 6px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    max-width: 1400px;
+    margin: 0 auto;
     padding: 20px;
 }
 
-.action-bar {
+/* Nav Tabs */
+.nav {
     display: flex;
-    gap: 10px;
-    justify-content: center;
+    gap: 8px;
+    background: #ffffff;
+    padding: 8px 24px;
+    border-bottom: 1px solid var(--border-color);
+    overflow-x: auto;
 }
 
-.section-title {
-    margin-top: 20px;
-    font-size: 15px;
-    font-weight: bold;
-    color: var(--primary-color);
-    border-bottom: 2px solid #eee;
-    padding-bottom: 6px;
-}
-
-/* ==========================================================================
-   4. FORM VÀ CÁC THÀNH PHẦN NHẬP LIỆU (CONTROLS & BUTTONS)
-   ========================================================================== */
-.row {
-    display: flex;
-    align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px solid #eee;
-}
-
-.row:last-child {
-    border-bottom: none;
-}
-
-.label {
-    width: 220px;
-    font-weight: 600;
+.nav a {
     color: var(--text-muted);
-    font-size: 14px;
-}
-
-.input-box {
-    flex: 1;
-}
-
-input[type='text'], 
-input[type='number'], 
-input[type='password'], 
-select {
-    width: 100%;
-    padding: 8px 10px;
-    border: 1px solid var(--border-dark);
-    border-radius: 4px;
-    font-size: 14px;
-    background-color: #fff;
-    outline: none;
-    transition: border-color 0.2s ease;
-}
-
-input:focus, select:focus {
-    border-color: var(--primary-color);
-}
-
-.search-box {
-    width: 100%;
-    padding: 12px 18px;
-    margin-bottom: 15px;
-    border: 1px solid var(--border-dark);
-    border-radius: 24px;
-    font-size: 14px;
-    outline: none;
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
     transition: all 0.2s ease;
 }
 
-.search-box:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 6px rgba(154, 180, 116, 0.4);
+.nav a:hover {
+    color: var(--primary);
+    background: #f1f5f9;
 }
 
-/* Các loại nút bấm */
-.btn {
-    display: block;
-    width: 100%;
-    margin-top: 15px;
-    padding: 12px;
-    background-color: var(--status-online);
-    color: #fff;
-    border: none;
-    font-size: 15px;
-    cursor: pointer;
-    border-radius: 4px;
-    font-weight: bold;
-    transition: opacity 0.2s;
+.nav a.active {
+    color: var(--primary);
+    background: #eff6ff;
+    font-weight: 600;
 }
 
-.btn:hover { opacity: 0.9; }
-.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+/* Tab Contents */
+.tab-content { display: none; }
+.tab-content.active { display: block; }
 
-.btn-orange { background-color: var(--btn-orange); }
-.btn-blue { background-color: var(--btn-blue); }
-.btn-secondary {
-    background-color: var(--btn-gray);
-    padding: 8px 14px;
-    font-size: 13px;
-    width: auto;
-    margin: 0;
-    border-radius: 4px;
-    border: none;
-    color: white;
-    cursor: pointer;
-}
-
-/* ==========================================================================
-   5. HIỂN THỊ THÔNG TIN & TRẠNG THÁI (STATUS BADGES)
-   ========================================================================== */
-.list-container {
+/* Các Form (Wi-Fi, TCP, Plasma, Config) căn giữa gọn gàng */
+#wifi, #tcp, #config, #plasma {
+    max-width: 580px;
+    margin: 0 auto;
+    background: var(--card-bg);
+    padding: 24px;
+    border-radius: var(--radius);
     border: 1px solid var(--border-color);
-    border-radius: 6px;
-    overflow: hidden;
+    box-shadow: var(--shadow);
 }
 
-.device-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 15px;
-    background: #fff;
-    border-bottom: 1px solid #eee;
-    cursor: pointer;
-    transition: background 0.15s ease;
-}
-
-.device-row:hover { background-color: #f1f8e9; }
-.device-row:last-child { border-bottom: none; }
-.device-name { font-weight: bold; font-size: 15px; color: var(--text-main); }
-
-/* Badges trạng thái */
-.status-badge { display: flex; align-items: center; font-size: 13px; font-weight: bold; }
-.dot { width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
-
-.online-text { color: var(--status-online); }
-.dot.online { background-color: var(--status-online); box-shadow: 0 0 5px var(--status-online); }
-
-.running-text { color: var(--status-running); }
-.dot.running { background-color: var(--status-running); box-shadow: 0 0 6px var(--status-running); animation: pulse 1.2s infinite; }
-
-.error-text { color: var(--status-error); }
-.dot.error { background-color: var(--status-error); box-shadow: 0 0 6px var(--status-error); }
-
-.offline-text { color: var(--status-offline); }
-.dot.offline { background-color: var(--status-offline); }
-
-@keyframes pulse {
-    0%   { opacity: 1; transform: scale(1); }
-    50%  { opacity: 0.4; transform: scale(1.25); }
-    100% { opacity: 1; transform: scale(1); }
-}
-
-.info-item {
-    padding: 11px 0;
-    border-bottom: 1px solid #eee;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+/* Typography & Form Controls */
+.section-title {
     font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    margin: 20px 0 10px 0;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border-color);
 }
-.info-label { font-weight: 600; color: var(--text-muted); }
-.info-value { color: var(--text-main); font-weight: bold; }
 
-/* Danh sách quét Wifi */
-.wifi-list-box {
-    margin: 10px 0 15px 0;
+.row {
+    margin-bottom: 14px;
+}
+
+.label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-main);
+    margin-bottom: 6px;
+}
+
+input[type="text"], input[type="password"], input[type="number"], select {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 14px;
     border: 1px solid var(--border-color);
     border-radius: 6px;
-    max-height: 180px;
-    overflow-y: auto;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
     background: #fafafa;
 }
 
+input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    background: #ffffff;
+}
+
+/* Buttons */
+.btn {
+    width: 100%;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    background: var(--primary);
+    color: #ffffff;
+    transition: background 0.2s, transform 0.1s;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn:hover { background: var(--primary-hover); }
+.btn:active { transform: scale(0.99); }
+.btn-orange { background: #f97316; }
+.btn-orange:hover { background: #ea580c; }
+.btn-blue { background: #0284c7; }
+.btn-blue:hover { background: #0369a1; }
+
+.btn-secondary {
+    background: #ffffff;
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+.btn-secondary:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+/* Telemetry Info Cards */
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--border-color);
+    font-size: 13.5px;
+}
+.info-label { color: var(--text-muted); }
+.info-value { font-weight: 600; font-family: monospace; font-size: 14px; }
+
+/* Wifi List Items */
+.wifi-list-box {
+    max-height: 180px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    margin-bottom: 15px;
+    background: #f8fafc;
+}
 .wifi-item {
+    padding: 10px 12px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 12px;
-    border-bottom: 1px solid #eee;
     cursor: pointer;
+    border-bottom: 1px solid #f1f5f9;
     font-size: 13px;
 }
-.wifi-item:hover { background: #e8f5e9; }
-.wifi-item:last-child { border-bottom: none; }
-.wifi-ssid { font-weight: 600; }
-.wifi-signal { font-size: 11px; font-weight: bold; padding: 3px 6px; border-radius: 4px; }
-.sig-good { color: #2e7d32; background: #e8f5e9; }
-.sig-medium { color: #ef6c00; background: #fff3e0; }
-.sig-weak { color: #c62828; background: #ffebee; }
+.wifi-item:hover { background: #e2e8f0; }
 
-/* ==========================================================================
-   6. TAB BẢN GHI HL7 (HEALTH LEVEL 7 RECORDS)
-   ========================================================================== */
-.record-card {
-    background: #f9fbf7;
-    border: 1px solid #dce7d0;
-    border-radius: 6px;
-    padding: 8px 15px;
-    margin-top: 10px;
-}
-
-.zone-box {
-    background: #fff;
+/* Device Selector Page */
+.search-box {
+    margin-bottom: 15px;
+    padding: 12px 16px;
+    border-radius: var(--radius);
     border: 1px solid var(--border-color);
-    border-left: 4px solid var(--primary-color);
-    padding: 8px 12px;
-    margin-bottom: 8px;
-    border-radius: 4px;
-    font-size: 13px;
+    font-size: 15px;
+    background: #ffffff;
 }
-.zone-pass { border-left-color: var(--status-online); }
-.zone-fail { border-left-color: var(--status-error); }
-
-.hl7-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-    font-size: 13px;
-    background: #fff;
+.device-row {
+    background: var(--card-bg);
+    padding: 14px 18px;
+    margin-bottom: 10px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    transition: transform 0.15s, border-color 0.15s;
 }
-.hl7-table th, .hl7-table td {
-    border: 1px solid #eee;
-    padding: 8px 10px;
-    text-align: left;
-}
-.hl7-table th {
-    background: #f1f8e9;
-    color: var(--text-main);
-    font-weight: bold;
-}
-
-.raw-box {
-    background: #263238;
-    color: #80cbc4;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 11px;
-    padding: 12px;
-    border-radius: 4px;
-    overflow-x: auto;
-    white-space: pre-wrap;
-    word-break: break-all;
-    margin-top: 8px;
-    max-height: 200px;
+.device-row:hover {
+    transform: translateY(-2px);
+    border-color: var(--primary);
 }
 
 /* ==========================================================================
-   7. THÍCH ỨNG DI ĐỘNG (RESPONSIVE DESIGN)
+   TAB BẢN GHI (GOOGLE SHEETS DASHBOARD - THIẾT KẾ ĐỘC QUYỀN)
    ========================================================================== */
-@media (max-width: 600px) {
-    .container {
-        margin: 10px;
-        padding: 15px;
-    }
-    .row {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    .label {
-        width: 100%;
-        margin-bottom: 6px;
-    }
-    .input-box {
-        width: 100%;
-    }
+#records {
+    max-width: 100% !important;
+    padding: 0 !important;
+}
+
+.sheet-dashboard-card {
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.sheet-dashboard-header {
+    background: #ffffff;
+    border-bottom: 1px solid var(--border-color);
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.sheet-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #065f46;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Đèn LED nhấp nháy trực tiếp */
+.pulse-led {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--success);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    animation: led-pulse 1.8s infinite;
+}
+
+@keyframes led-pulse {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.sheet-iframe-container {
+    width: 100%;
+    height: calc(100vh - 180px);
+    min-height: 600px;
+    background: #ffffff;
+}
+
+.sheet-iframe-container iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
 }
