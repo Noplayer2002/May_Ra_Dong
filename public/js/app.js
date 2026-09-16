@@ -33,7 +33,6 @@ function selectDevice(id) {
         document.getElementById('wifi-pass').focus();
     });
 
-    renderHL7Dropdown(device);
     showPage('settings-page');
 }
 
