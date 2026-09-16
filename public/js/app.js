@@ -124,34 +124,24 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
    // 6. Action: Forms Submit - CẬP NHẬT GỬI VÀ XÓA TỰ ĐỘNG
+   // Sửa dòng gọi hàm trong app.js:
     document.getElementById('wifi-connect-form').onsubmit = async (e) => {
         e.preventDefault();
         const devId = AppState.selectedDeviceId;
         if (!devId) return;
     
-        const ssidInput = document.getElementById('ssid');
-        const passInput = document.getElementById('wifi-pass');
-    
-        const ssid = ssidInput.value.trim();
-        const pass = passInput.value;
-    
-        const btnSubmit = e.target.querySelector('button[type="submit"]');
-        btnSubmit.disabled = true;
-        btnSubmit.textContent = "⏳ Đang gửi cấu hình...";
+        const ssid = document.getElementById('ssid').value.trim();
+        const pass = document.getElementById('wifi-pass').value;
     
         try {
-            // Gửi lệnh và lên lịch tự xóa sau 10 giây trên Database
-            await DeviceService.saveWifiCommandAndCleanup(devId, ssid, pass, 10000);
-            
-            // Xóa trắng ô nhập mật khẩu trên giao diện ngay lập tức để bảo mật
-            passInput.value = '';
-            
-            alert("✅ Đã gửi cấu hình Wi-Fi xuống thiết bị!\n🔒 Dữ liệu mật khẩu sẽ tự động xóa sạch khỏi Cloud sau 10 giây.");
+            // ĐỔI TÊN Ở DÒNG NÀY: Dùng saveWifi
+            await DeviceService.saveWifi(devId, ssid, pass);
+    
+            // Làm rỗng ô nhập mật khẩu trên giao diện ngay lập tức
+            document.getElementById('wifi-pass').value = '';
+            alert("✅ Đã gửi lệnh lưu Wi-Fi! Node wifi sẽ tự động xóa sau 10 giây.");
         } catch (err) {
             alert("❌ Lỗi khi gửi lệnh: " + err.message);
-        } finally {
-            btnSubmit.disabled = false;
-            btnSubmit.textContent = "💾 Lưu & Đổi Mạng Cho Thiết Bị";
         }
     };
 
