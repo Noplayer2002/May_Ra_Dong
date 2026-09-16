@@ -123,25 +123,38 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 8000);
     };
 
-   // 6. Action: Forms Submit - CẬP NHẬT GỬI VÀ XÓA TỰ ĐỘNG
-   // Sửa dòng gọi hàm trong app.js:
+   // 6. Action: Forms Submit - Lưu Wi-Fi & Dọn dẹp
     document.getElementById('wifi-connect-form').onsubmit = async (e) => {
         e.preventDefault();
         const devId = AppState.selectedDeviceId;
         if (!devId) return;
-    
+
         const ssid = document.getElementById('ssid').value.trim();
         const pass = document.getElementById('wifi-pass').value;
-    
+
+        const btnSubmit = e.target.querySelector('button[type="submit"]');
+        btnSubmit.disabled = true;
+        btnSubmit.textContent = "⏳ Đang cấu hình...";
+
         try {
-            // ĐỔI TÊN Ở DÒNG NÀY: Dùng saveWifi
+            // Gửi cấu hình (hàm này sẽ tự động xóa node wifi_list trên Firebase)
             await DeviceService.saveWifi(devId, ssid, pass);
-    
-            // Làm rỗng ô nhập mật khẩu trên giao diện ngay lập tức
+
+            // 1. Xóa sạch mật khẩu vừa nhập trên giao diện
             document.getElementById('wifi-pass').value = '';
-            alert("✅ Đã gửi lệnh lưu Wi-Fi! Node wifi sẽ tự động xóa sau 10 giây.");
+
+            // 2. Dọn sạch danh sách Wi-Fi đang hiển thị trên giao diện Web
+            const wifiBox = document.getElementById('scanned-wifi-list');
+            if (wifiBox) {
+                wifiBox.innerHTML = '<div style="color:#2e7d32; font-size:13px; text-align:center; padding:15px;">✅ Đã cấu hình mạng xong. Danh sách quét đã được đóng.</div>';
+            }
+
+            alert("✅ Đã gửi lệnh lưu Wi-Fi!\n🧹 Danh sách quét Wi-Fi đã được xóa khỏi Database.\n🔒 Mật khẩu sẽ tự động biến mất sau 10 giây.");
         } catch (err) {
-            alert("❌ Lỗi khi gửi lệnh: " + err.message);
+            alert("❌ Lỗi: " + err.message);
+        } finally {
+            btnSubmit.disabled = false;
+            btnSubmit.textContent = "💾 Lưu & Đổi Mạng Cho Thiết Bị";
         }
     };
 
