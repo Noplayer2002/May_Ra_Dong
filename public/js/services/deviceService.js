@@ -125,4 +125,46 @@ export const DeviceService = {
 
         return true;
     }
+    // xóa cache ssid và password
+    // 1. Khi quét Wi-Fi: Xóa danh sách cũ trước khi kích hoạt cờ quét
+    async triggerScanWifi(deviceId) {
+        await db.ref(`esp32/devices/${deviceId}/wifi_list`).remove();
+        return db.ref(`esp32/devices/${deviceId}/command/scan_wifi`).set(true);
+    },
+
+    // 2. Hàm chuyên dụng để xóa danh sách Wi-Fi
+    clearWifiList(deviceId) {
+        return db.ref(`esp32/devices/${deviceId}/wifi_list`).remove();
+    },
+
+    // 3. Cập nhật hàm saveWifi: Xóa ngay wifi_list sau khi người dùng gửi pass
+    async saveWifi(deviceId, ssid, pass, timeoutMs = 10000) {
+        if (!deviceId || !ssid) throw new Error("Thiếu deviceId hoặc SSID");
+
+        const wifiRef = db.ref(`esp32/devices/${deviceId}/wifi`);
+
+        // Ghi thông tin mạng vào node wifi
+        await wifiRef.set({ ssid, pass });
+
+        // XÓA NGAY LẬP TỨC THƯ MỤC wifi_list TRÊN FIREBASE
+        await db.ref(`esp32/devices/${deviceId}/wifi_list`).remove();
+        console.log(`🧹 Đã xóa sạch thư mục wifi_list của ${deviceId}`);
+
+        // Tự động xóa node wifi sau timeout (10 giây)
+        setTimeout(async () => {
+            try {
+                await wifiRef.remove();
+                console.log(`🧹 Đã xóa sạch node wifi tại: esp32/devices/${deviceId}/wifi`);
+            } catch (err) {
+                console.warn("Lỗi khi xóa node wifi:", err);
+            }
+        }, timeoutMs);
+
+        return true;
+    },
+
+    // Giữ alias dự phòng để không bao giờ bị lỗi gọi hàm
+    saveWifiCommandAndCleanup(deviceId, ssid, pass, timeoutMs) {
+        return this.saveWifi(deviceId, ssid, pass, timeoutMs);
+    },
 };
