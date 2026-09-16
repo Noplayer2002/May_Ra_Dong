@@ -110,17 +110,37 @@ document.addEventListener('DOMContentLoaded', () => {
         pingBtn.textContent = "⚡ Quét Trạng Thái (Global Ping)";
     };
 
-    // 5. Action: Scan Wifi
+    // 5. Action: Scan Wifi (Đồng bộ 10s)
     const scanWifiBtn = document.getElementById('btn-scan-wifi');
     scanWifiBtn.onclick = async () => {
-        if (!AppState.selectedDeviceId) return;
+        const devId = AppState.selectedDeviceId;
+        if (!devId) return;
+
         scanWifiBtn.disabled = true;
-        scanWifiBtn.textContent = "⏳ Đang quét Wi-Fi...";
-        await DeviceService.triggerScanWifi(AppState.selectedDeviceId);
+        scanWifiBtn.textContent = "⏳ Đang quét Wi-Fi (10s)...";
+
+        // Hiển thị trạng thái đang chờ dữ liệu trên UI
+        const wifiBox = document.getElementById('scanned-wifi-list');
+        if (wifiBox) {
+            wifiBox.innerHTML = '<div style="color:#1976d2; font-size:13px; text-align:center; padding:15px;">⏳ Đang yêu cầu ESP32 quét các mạng xung quanh...</div>';
+        }
+
+        // Kích hoạt quét (Firebase sẽ tự chuyển về false sau 10s)
+        await DeviceService.triggerScanWifi(devId);
+
+        // Đếm ngược 10s trên giao diện
         setTimeout(() => {
             scanWifiBtn.disabled = false;
             scanWifiBtn.textContent = "🔍 Quét Wi-Fi Xung Quanh";
-        }, 8000);
+
+            // Kiểm tra xem sau 10s đã có dữ liệu trả về chưa
+            const currentDev = AppState.devices[devId];
+            if (!currentDev?.wifi_list || currentDev.wifi_list.length === 0) {
+                if (wifiBox) {
+                    wifiBox.innerHTML = '<div style="color:#d32f2f; font-size:13px; text-align:center; padding:15px;">⚠️ Hết 10s: Không nhận được phản hồi từ thiết bị hoặc không có mạng Wi-Fi nào.</div>';
+                }
+            }
+        }, 10000);
     };
 
    // 6. Action: Forms Submit - Lưu Wi-Fi & Dọn dẹp

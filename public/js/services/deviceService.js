@@ -9,9 +9,29 @@ export const DeviceService = {
     },
 
     // Quét Wi-Fi: Xóa danh sách cũ trước khi quét mới
+// Quét Wi-Fi: Xóa dữ liệu cũ, bật cờ true và TỰ ĐỘNG RESET về false sau 10s
     async triggerScanWifi(deviceId) {
+        if (!deviceId) return;
+
+        const scanCmdRef = db.ref(`esp32/devices/${deviceId}/command/scan_wifi`);
+
+        // 1. Xóa danh sách Wi-Fi cũ trên Firebase
         await db.ref(`esp32/devices/${deviceId}/wifi_list`).remove();
-        return db.ref(`esp32/devices/${deviceId}/command/scan_wifi`).set(true);
+
+        // 2. Bật cờ quét lên true
+        await scanCmdRef.set(true);
+
+        // 3. ĐÚNG 10 GIÂY SAU: Tự động chuyển về false dù có nhận được dữ liệu hay không
+        setTimeout(async () => {
+            try {
+                await scanCmdRef.set(false);
+                console.log(`⏱️ Đã tự động trả cờ scan_wifi về false cho ${deviceId}`);
+            } catch (err) {
+                console.warn("Lỗi khi reset cờ scan_wifi:", err);
+            }
+        }, 10000);
+
+        return true;
     },
 
     // Hàm xóa danh sách Wi-Fi
