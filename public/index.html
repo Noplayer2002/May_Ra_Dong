@@ -3,149 +3,142 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ESP32 Settings & HL7 Records</title>
+    <title>ESP32 Plasma Thawer Management</title>
     <!-- Firebase SDK (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
-    <!-- Stylesheet -->
+    <!-- Stylesheet Hiện Đại Mới -->
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <!-- MÀN HÌNH CHỌN THIẾT BỊ -->
     <div id="device-selection-page" class="page active">
-        <div class="top-bar">⚙️ Quản lý thiết bị</div>
-        <div class="container">
-            <input type="text" id="search-input" class="search-box" placeholder="🔍 Tìm kiếm thiết bị...">
+        <div class="top-bar">⚙️ Quản lý thiết bị rã đông</div>
+        <div class="container" style="max-width: 650px;">
+            <input type="text" id="search-input" class="search-box" placeholder="🔍 Tìm kiếm mã máy hoặc MAC...">
             <div id="devices-list" class="list-container"></div>
-            <div class="action-bar" style="padding: 15px 0 0 0;">
+            <div style="margin-top: 20px;">
                 <button class="btn btn-orange" id="btn-check-device-status">⚡ Quét Trạng Thái (Global Ping)</button>
             </div>
         </div>
     </div>
 
+    <!-- MÀN HÌNH CHI TIẾT THIẾT BỊ -->
     <div id="settings-page" class="page">
         <div class="top-bar">
-            <span>⚙️ <span id="selected-device-name">ESP32</span></span>
-            <button class="btn-secondary" id="btn-back">← Trở lại</button>
+            <span>⚙️ Thiết bị: <span id="selected-device-name" style="color: var(--primary);">ESP32</span></span>
+            <button class="btn-secondary" id="btn-back">← Quay lại danh sách</button>
         </div>
+        
         <div class="nav">
             <a class="active" data-tab="wifi">Wi-Fi</a>
-            <a data-tab="tcp">TCP</a>
-            <a data-tab="config">Thông tin</a>
+            <a data-tab="tcp">TCP Server</a>
+            <a data-tab="config">Thông số máy</a>
             <a data-tab="plasma">Plasma Thawer</a>
-            <a data-tab="records">📑 Bản ghi (HL7)</a>
+            <a data-tab="records">📑 Nhật ký bản ghi (HL7)</a>
         </div>
+
         <div class="container">
+            <!-- TAB 1: WI-FI -->
             <div id="wifi" class="tab-content active">
-                <button type="button" class="btn btn-blue" id="btn-scan-wifi" style="margin-top:0; margin-bottom:15px;">🔍 Quét Wi-Fi Xung Quanh</button>
-                <div class="label" style="width: 100%; margin-bottom: 5px;">Mạng Wi-Fi quét được (Click để chọn):</div>
+                <button type="button" class="btn btn-blue" id="btn-scan-wifi" style="margin-bottom:15px;">🔍 Quét Wi-Fi Xung Quanh</button>
+                <div class="label">Mạng Wi-Fi tìm thấy (Click để chọn):</div>
                 <div id="scanned-wifi-list" class="wifi-list-box"></div>
 
                 <form id="wifi-connect-form">
-                    <div class="row"><div class="label">SSID (Tên mạng)</div><div class="input-box"><input type="text" id="ssid" required placeholder="Tên Wi-Fi"></div></div>
-                    <div class="row"><div class="label">Mật khẩu</div><div class="input-box"><input type="password" id="wifi-pass" placeholder="Mật khẩu Wi-Fi"></div></div>
-                    <button type="submit" class="btn">💾 Lưu & Đổi Mạng Cho Thiết Bị</button>
+                    <div class="row">
+                        <div class="label">Tên mạng (SSID)</div>
+                        <input type="text" id="ssid" required placeholder="Nhập hoặc chọn Wi-Fi">
+                    </div>
+                    <div class="row">
+                        <div class="label">Mật khẩu Wi-Fi</div>
+                        <input type="password" id="wifi-pass" placeholder="Nhập mật khẩu (tự xóa sau khi gửi)">
+                    </div>
+                    <button type="submit" class="btn">💾 Lưu & Đổi Mạng Cho Máy</button>
                 </form>
             </div>
 
+            <!-- TAB 2: TCP -->
             <div id="tcp" class="tab-content">
                 <form id="tcp-form">
-                    <div class="row"><div class="label">Server IP</div><div class="input-box"><input type="text" id="server_ip" required></div></div>
-                    <div class="row"><div class="label">Server Port</div><div class="input-box"><input type="number" id="server_port" required></div></div>
-                    <button type="submit" class="btn">💾 Lưu TCP</button>
+                    <div class="row"><div class="label">Server IP (Máy chủ LIS)</div><input type="text" id="server_ip" required></div>
+                    <div class="row"><div class="label">Server Port</div><input type="number" id="server_port" required></div>
+                    <button type="submit" class="btn">💾 Lưu Cấu Hình TCP</button>
                 </form>
             </div>
             
+            <!-- TAB 3: THÔNG SỐ MÁY -->
             <div id="config" class="tab-content">
                 <div class="info-item"><span class="info-label">📡 Trạng thái:</span><span class="info-value" id="network-status">...</span></div>
                 <div class="info-item"><span class="info-label">⚙️ Máy trạng thái (FSM):</span><span class="info-value" id="lpc-fsm">N/A</span></div>
                 <div class="info-item"><span class="info-label">🚨 Mã lỗi bo mạch (ERR):</span><span class="info-value" id="lpc-err">0x0000</span></div>
-                <div class="info-item"><span class="info-label">🌐 IP:</span><span class="info-value" id="ip-address">N/A</span></div>
-                <div class="info-item"><span class="info-label">🔗 MAC:</span><span class="info-value" id="mac-address">N/A</span></div>
-                <div class="info-item"><span class="info-label">🔋 Pin (Battery):</span><span class="info-value" id="battery-level">N/A</span></div>
+                <div class="info-item"><span class="info-label">🌐 Địa chỉ IP:</span><span class="info-value" id="ip-address">N/A</span></div>
+                <div class="info-item"><span class="info-label">🔗 Địa chỉ MAC:</span><span class="info-value" id="mac-address">N/A</span></div>
+                <div class="info-item"><span class="info-label">🔋 Pin dự phòng:</span><span class="info-value" id="battery-level">N/A</span></div>
             </div>
 
+            <!-- TAB 4: CẤU HÌNH NHIỆT ĐỘ & PID -->
             <div id="plasma" class="tab-content">
                 <form id="plasma-form">
                     <div class="section-title">Cài Đặt Nhiệt Độ Chung</div>
-                    <div class="row"><div class="label">Set Point T_operator (37)</div><div class="input-box"><input type="number" step="any" id="sp_t_operator" required></div></div>
-                    <div class="row"><div class="label">Set Point T_hot (70~90)</div><div class="input-box"><input type="number" step="any" id="sp_t_hot" required></div></div>
-                    <div class="row"><div class="label">Set Point for Fan</div><div class="input-box"><input type="number" step="any" id="sp_fan" required></div></div>
-                    <div class="row"><div class="label">Nhiệt độ Max</div><div class="input-box"><input type="number" step="any" id="t_max" required></div></div>
-                    <div class="row"><div class="label">Nhiệt độ Min</div><div class="input-box"><input type="number" step="any" id="t_min" required></div></div>
+                    <div class="row"><div class="label">Set Point T_operator (37°C)</div><input type="number" step="any" id="sp_t_operator" required></div>
+                    <div class="row"><div class="label">Set Point T_hot (70~90°C)</div><input type="number" step="any" id="sp_t_hot" required></div>
+                    <div class="row"><div class="label">Set Point Quạt (Fan)</div><input type="number" step="any" id="sp_fan" required></div>
+                    <div class="row"><div class="label">Nhiệt độ Max</div><input type="number" step="any" id="t_max" required></div>
+                    <div class="row"><div class="label">Nhiệt độ Min</div><input type="number" step="any" id="t_min" required></div>
 
-                    <div class="section-title">Cảm Biến T1 & T2</div>
-                    <div class="row"><div class="label">Nhiệt độ Offset T1</div><div class="input-box"><input type="number" step="any" id="t_offset_1" required></div></div>
-                    <div class="row"><div class="label">Điện trở Calibration T1</div><div class="input-box"><input type="number" step="any" id="r_cal_1" required></div></div>
-                    <div class="row"><div class="label">Nhiệt độ Offset T2</div><div class="input-box"><input type="number" step="any" id="t_offset_2" required></div></div>
-                    <div class="row"><div class="label">Điện trở Calibration T2</div><div class="input-box"><input type="number" step="any" id="r_cal_2" required></div></div>
+                    <div class="section-title">Hiệu Chuẩn Cảm Biến T1 & T2</div>
+                    <div class="row"><div class="label">Offset T1</div><input type="number" step="any" id="t_offset_1" required></div>
+                    <div class="row"><div class="label">R_cal T1</div><input type="number" step="any" id="r_cal_1" required></div>
+                    <div class="row"><div class="label">Offset T2</div><input type="number" step="any" id="t_offset_2" required></div>
+                    <div class="row"><div class="label">R_cal T2</div><input type="number" step="any" id="r_cal_2" required></div>
 
-                    <div class="section-title">Cảm Biến T3 & T4</div>
-                    <div class="row"><div class="label">Nhiệt độ Offset T3</div><div class="input-box"><input type="number" step="any" id="t_offset_3" required></div></div>
-                    <div class="row"><div class="label">Điện trở Calibration T3</div><div class="input-box"><input type="number" step="any" id="r_cal_3" required></div></div>
-                    <div class="row"><div class="label">Nhiệt độ Offset T4</div><div class="input-box"><input type="number" step="any" id="t_offset_4" required></div></div>
-                    <div class="row"><div class="label">Điện trở Calibration T4</div><div class="input-box"><input type="number" step="any" id="r_cal_4" required></div></div>
+                    <div class="section-title">Hiệu Chuẩn Cảm Biến T3 & T4</div>
+                    <div class="row"><div class="label">Offset T3</div><input type="number" step="any" id="t_offset_3" required></div>
+                    <div class="row"><div class="label">R_cal T3</div><input type="number" step="any" id="r_cal_3" required></div>
+                    <div class="row"><div class="label">Offset T4</div><input type="number" step="any" id="t_offset_4" required></div>
+                    <div class="row"><div class="label">R_cal T4</div><input type="number" step="any" id="r_cal_4" required></div>
 
-                    <div class="section-title">Thông Số PID</div>
-                    <div class="row"><div class="label">Kp (Tỷ lệ)</div><div class="input-box"><input type="number" step="any" id="pid_kp" required></div></div>
-                    <div class="row"><div class="label">Ti (Tích phân)</div><div class="input-box"><input type="number" step="any" id="pid_ti" required></div></div>
-                    <div class="row"><div class="label">Td (Vi phân)</div><div class="input-box"><input type="number" step="any" id="pid_td" required></div></div>
+                    <div class="section-title">Hệ Số Điều Khiển PID</div>
+                    <div class="row"><div class="label">Kp (Hệ số tỷ lệ)</div><input type="number" step="any" id="pid_kp" required></div>
+                    <div class="row"><div class="label">Ti (Thời gian tích phân)</div><input type="number" step="any" id="pid_ti" required></div>
+                    <div class="row"><div class="label">Td (Thời gian vi phân)</div><input type="number" step="any" id="pid_td" required></div>
 
-                    <button type="submit" class="btn btn-orange">💾 Lưu Cấu Hình Plasma</button>
+                    <button type="submit" class="btn btn-orange" style="margin-top: 15px;">💾 Lưu Cấu Hình Plasma</button>
                 </form>
             </div>
 
+            <!-- TAB 5: BẢNG GOOGLE SHEETS HIỆN ĐẠI BUNG TOÀN MÀN HÌNH -->
             <div id="records" class="tab-content">
-                <div class="row" style="border:none; padding-bottom: 5px;">
-                    <div class="label" style="width: 140px;">Chọn bản tin:</div>
-                    <div class="input-box">
-                        <select id="record-select">
-                            <option value="">-- Chọn mã bản tin --</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div id="record-empty-state" style="text-align: center; color: #888; padding: 30px 10px;">
-                    Không tìm thấy bản ghi trong nhánh <code>history</code> của thiết bị này.
-                </div>
-
-                <div id="record-detail-view" style="display: none;">
-                    <div class="record-card">
-                        <div class="info-item"><span class="info-label">🔖 Mã bản tin:</span><span class="info-value" id="hl7-msg-id">-</span></div>
-                        <div class="info-item"><span class="info-label">📦 Mã mẻ (Batch ID):</span><span class="info-value" id="hl7-batch-id">-</span></div>
-                        <div class="info-item"><span class="info-label">🕒 Thời gian HL7:</span><span class="info-value" id="hl7-timestamp">-</span></div>
-                        <div class="info-item"><span class="info-label">🏥 Thiết bị / Nơi gửi:</span><span class="info-value" id="hl7-sender">-</span></div>
-                    </div>
-
-                    <div class="section-title">Thông Số Zone Giã Đông (NTE)</div>
-                    <div id="hl7-zones" style="margin-top: 10px;"></div>
-
-                    <div class="section-title">Danh Sách Túi Huyết Tương (OBX: 1 - 16)</div>
-                    <table class="hl7-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 50px;">Vị trí</th>
-                                <th>Mã Barcode / Túi máu</th>
-                                <th style="width: 70px; text-align: center;">Trạng thái</th>
-                            </tr>
-                        </thead>
-                        <tbody id="hl7-bags-body"></tbody>
-                    </table>
-
-                    <div class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
-                        <span>Dữ Liệu Thô (raw_hl7)</span>
-                        <div>
-                            <button type="button" class="btn-secondary" id="btn-copy-hl7" style="font-size: 11px; padding: 4px 8px;">📋 Sao chép</button>
-                            <button type="button" class="btn-secondary" id="btn-export-sheet" style="font-size: 11px; padding: 4px 8px; margin-left: 5px; background-color: #2e7d32;">📊 Xuất Google Sheets</button>
+                <div class="sheet-dashboard-card">
+                    <div class="sheet-dashboard-header">
+                        <div class="sheet-status-pill">
+                            <span class="pulse-led"></span>
+                            <span>Đồng Bộ Google Sheets Trực Tiếp</span>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button type="button" class="btn-secondary" id="btn-refresh-sheet">🔄 Tải lại dữ liệu</button>
+                            <a href="https://docs.google.com/spreadsheets/d/1jaLfUghym0DGokRXKbHBB35qx9IXLwIW4DnyRnJkThg/edit?gid=0#gid=0" 
+                               target="_blank" 
+                               class="btn-secondary" 
+                               style="background: #0284c7; color: #fff; border-color: #0284c7;">
+                                ↗️ Xem toàn màn hình
+                            </a>
                         </div>
                     </div>
-                    <pre class="raw-box" id="hl7-raw-content"></pre>
+                    <div class="sheet-iframe-container">
+                        <iframe 
+                            id="google-sheet-iframe"
+                            src="https://docs.google.com/spreadsheets/d/1jaLfUghym0DGokRXKbHBB35qx9IXLwIW4DnyRnJkThg/preview" 
+                            allow="autoplay">
+                        </iframe>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Nạp file CSS bạn chỉ cần copy nguyên thẻ style cũ bỏ vào css/style.css -->
-    <!-- Script chạy dạng Module ES6 -->
+    <!-- Script điều khiển -->
     <script type="module" src="js/app.js"></script>
 </body>
 </html>
