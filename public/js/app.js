@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
         const ssidInput = document.getElementById('ssid');
         const passInput = document.getElementById('wifi-pass');
-    
+        
         const ssid = ssidInput.value.trim();
         const pass = passInput.value;
     
