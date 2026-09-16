@@ -40,7 +40,16 @@ function renderHL7Dropdown(device) {
     const selectEl = document.getElementById('record-select');
     selectEl.innerHTML = '<option value="">-- Chọn mã bản tin --</option>';
     AppState.currentDeviceRecords = {};
-
+    // Nút tải lại bảng tính Google Sheets ngay trên giao diện
+    const btnRefreshSheet = document.getElementById('btn-refresh-sheet');
+    if (btnRefreshSheet) {
+        btnRefreshSheet.onclick = () => {
+            const iframe = document.getElementById('google-sheet-iframe');
+            if (iframe) {
+                iframe.src = iframe.src; // Ép iframe tải lại dữ liệu mới nhất
+            }
+        };
+    }
     const historyNode = device.history || {};
     const keys = Object.keys(historyNode).sort().reverse();
     
