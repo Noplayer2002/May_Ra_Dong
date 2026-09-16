@@ -110,38 +110,71 @@ document.addEventListener('DOMContentLoaded', () => {
         pingBtn.textContent = "⚡ Quét Trạng Thái (Global Ping)";
     };
 
-    // 5. Action: Scan Wifi
+    // 5. Action: Scan Wifi (Đồng bộ 10s)
     const scanWifiBtn = document.getElementById('btn-scan-wifi');
     scanWifiBtn.onclick = async () => {
-        if (!AppState.selectedDeviceId) return;
+        const devId = AppState.selectedDeviceId;
+        if (!devId) return;
+
         scanWifiBtn.disabled = true;
-        scanWifiBtn.textContent = "⏳ Đang quét Wi-Fi...";
-        await DeviceService.triggerScanWifi(AppState.selectedDeviceId);
+        scanWifiBtn.textContent = "⏳ Đang quét Wi-Fi (10s)...";
+
+        // Hiển thị trạng thái đang chờ dữ liệu trên UI
+        const wifiBox = document.getElementById('scanned-wifi-list');
+        if (wifiBox) {
+            wifiBox.innerHTML = '<div style="color:#1976d2; font-size:13px; text-align:center; padding:15px;">⏳ Đang yêu cầu ESP32 quét các mạng xung quanh...</div>';
+        }
+
+        // Kích hoạt quét (Firebase sẽ tự chuyển về false sau 10s)
+        await DeviceService.triggerScanWifi(devId);
+
+        // Đếm ngược 10s trên giao diện
         setTimeout(() => {
             scanWifiBtn.disabled = false;
             scanWifiBtn.textContent = "🔍 Quét Wi-Fi Xung Quanh";
-        }, 8000);
+
+            // Kiểm tra xem sau 10s đã có dữ liệu trả về chưa
+            const currentDev = AppState.devices[devId];
+            if (!currentDev?.wifi_list || currentDev.wifi_list.length === 0) {
+                if (wifiBox) {
+                    wifiBox.innerHTML = '<div style="color:#d32f2f; font-size:13px; text-align:center; padding:15px;">⚠️ Hết 10s: Không nhận được phản hồi từ thiết bị hoặc không có mạng Wi-Fi nào.</div>';
+                }
+            }
+        }, 10000);
     };
 
-   // 6. Action: Forms Submit - CẬP NHẬT GỬI VÀ XÓA TỰ ĐỘNG
-   // Sửa dòng gọi hàm trong app.js:
+   // 6. Action: Forms Submit - Lưu Wi-Fi & Dọn dẹp
     document.getElementById('wifi-connect-form').onsubmit = async (e) => {
         e.preventDefault();
         const devId = AppState.selectedDeviceId;
         if (!devId) return;
-    
+
         const ssid = document.getElementById('ssid').value.trim();
         const pass = document.getElementById('wifi-pass').value;
-    
+
+        const btnSubmit = e.target.querySelector('button[type="submit"]');
+        btnSubmit.disabled = true;
+        btnSubmit.textContent = "⏳ Đang cấu hình...";
+
         try {
-            // ĐỔI TÊN Ở DÒNG NÀY: Dùng saveWifi
+            // Gửi cấu hình (hàm này sẽ tự động xóa node wifi_list trên Firebase)
             await DeviceService.saveWifi(devId, ssid, pass);
-    
-            // Làm rỗng ô nhập mật khẩu trên giao diện ngay lập tức
+
+            // 1. Xóa sạch mật khẩu vừa nhập trên giao diện
             document.getElementById('wifi-pass').value = '';
-            alert("✅ Đã gửi lệnh lưu Wi-Fi! Node wifi sẽ tự động xóa sau 10 giây.");
+
+            // 2. Dọn sạch danh sách Wi-Fi đang hiển thị trên giao diện Web
+            const wifiBox = document.getElementById('scanned-wifi-list');
+            if (wifiBox) {
+                wifiBox.innerHTML = '<div style="color:#2e7d32; font-size:13px; text-align:center; padding:15px;">✅ Đã cấu hình mạng xong. Danh sách quét đã được đóng.</div>';
+            }
+
+            alert("✅ Đã gửi lệnh lưu Wi-Fi!\n🧹 Danh sách quét Wi-Fi đã được xóa khỏi Database.\n🔒 Mật khẩu sẽ tự động biến mất sau 10 giây.");
         } catch (err) {
-            alert("❌ Lỗi khi gửi lệnh: " + err.message);
+            alert("❌ Lỗi: " + err.message);
+        } finally {
+            btnSubmit.disabled = false;
+            btnSubmit.textContent = "💾 Lưu & Đổi Mạng Cho Thiết Bị";
         }
     };
 
