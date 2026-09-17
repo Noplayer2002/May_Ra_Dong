@@ -10,6 +10,7 @@ export const DeviceService = {
 
     async triggerScanWifi(deviceId) {
         if (!deviceId) return;
+
         const scanCmdRef = db.ref(`esp32/devices/${deviceId}/command/scan_wifi`);
         await db.ref(`esp32/devices/${deviceId}/wifi_list`).remove();
         await scanCmdRef.set(true);
@@ -40,7 +41,7 @@ export const DeviceService = {
         setTimeout(async () => {
             try {
                 await wifiRef.remove();
-                console.log(`🧹 Đã xóa sạch node wifi tại: esp32/devices/${deviceId}/wifi`);
+                console.log(`🧹 Đã xóa node wifi: esp32/devices/${deviceId}/wifi`);
             } catch (err) {
                 console.warn("Lỗi khi xóa node wifi:", err);
             }
@@ -87,15 +88,13 @@ export const DeviceService = {
         });
     },
 
-// js/services/deviceService.js
-
-async processAndForwardHL7(deviceId, recordKey, rawHL7Text) {
+    async processAndForwardHL7(deviceId, recordKey, rawHL7Text) {
         if (!rawHL7Text) return null;
 
         const parseResult = parseHL7String(rawHL7Text);
         const parsedData = parseResult ? parseResult.parsed : null;
         if (!parsedData) return null;
-        
+
         const { msh, pid, slots, zoneA, zoneB } = parsedData;
 
         const payload = {
@@ -110,22 +109,26 @@ async processAndForwardHL7(deviceId, recordKey, rawHL7Text) {
 
         try {
             await fetch(GOOGLE_SHEET_WEBHOOK_URL, {
-                method: 'POST', mode: 'no-cors',
+                method: 'POST',
+                mode: 'no-cors',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
+            console.log(`📊 Đã tự động đẩy HL7 [${recordKey}] sang Sheets (16 dòng).`);
         } catch (err) {
-            console.error("Lỗi gửi Google Sheet:", err);
+            console.error("Lỗi khi gửi Google Sheet:", err);
         }
 
-        // Đẩy xong thì xóa luôn trên Firebase
-        try { await db.ref(`esp32/devices/${deviceId}/history/${recordKey}`).remove(); } 
-        catch (e) {}
+        // Xóa bản ghi đã xử lý trên Firebase
+        try {
+            await db.ref(`esp32/devices/${deviceId}/history/${recordKey}`).remove();
+            console.log(`🧹 Đã giải phóng bộ nhớ Firebase: ${recordKey}`);
+        } catch (e) {
+            console.warn("Lỗi xóa node history:", e);
+        }
 
         return true;
-    }
-
-// ... (Giữ nguyên các hàm bên dưới)
+    }, // <-- Dấu phẩy quan trọng ở đây!
 
     clearAllHistory(deviceId) {
         return db.ref(`esp32/devices/${deviceId}/history`).remove();
