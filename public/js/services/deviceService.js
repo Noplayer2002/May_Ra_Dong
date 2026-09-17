@@ -127,7 +127,7 @@ export const DeviceService = {
         // await db.ref(`esp32/devices/${deviceId}/history/${recordKey}`).remove();
 
         return true;
-    }
+    },
 
     clearAllHistory(deviceId) {
         return db.ref(`esp32/devices/${deviceId}/history`).remove();
