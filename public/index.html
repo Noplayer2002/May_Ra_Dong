@@ -106,74 +106,8 @@
                     <button type="submit" class="btn btn-orange" style="margin-top: 15px;">💾 Lưu Cấu Hình Plasma</button>
                 </form>
             </div>
-
-            <!-- TAB 5: BẢNG BẢN GHI HL7 VÀ GOOGLE SHEETS -->
+            <!-- TAB 5: BẢNG GOOGLE SHEETS DASHBOARD -->
             <div id="records" class="tab-content">
-                <!-- KHỐI CHI TIẾT BẢN TIN HL7 -->
-                <div style="background:#fff; border-radius:10px; padding:18px; margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,0.06); border:1px solid #e2e8f0;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #f1f5f9; padding-bottom:12px; margin-bottom:15px;">
-                        <h3 style="margin:0; font-size:16px; color:#1e293b;">📑 Bản ghi chu trình rã đông mới nhất</h3>
-                        <span id="hl7-timestamp-badge" style="background:#e0f2fe; color:#0369a1; padding:4px 10px; border-radius:12px; font-size:12px; font-weight:600;">Chưa có bản ghi</span>
-                    </div>
-
-                    <!-- THÔNG TIN CHUNG MSH & PID -->
-                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:10px; margin-bottom:15px; font-size:13px; background:#f8fafc; padding:12px; border-radius:8px;">
-                        <div><strong>Mã mẻ (Batch ID):</strong> <span id="hl7-batch-id" style="color:#0284c7; font-weight:bold;">--</span></div>
-                        <div><strong>Message ID:</strong> <span id="hl7-msg-id" style="font-family:monospace;">--</span></div>
-                        <div><strong>Thiết bị gửi:</strong> <span id="hl7-sender">--</span></div>
-                        <div><strong>Thời gian rã đông:</strong> <span id="hl7-timestamp">--</span></div>
-                    </div>
-
-                    <!-- NHIỆT ĐỘ ZONE A & B -->
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px; margin-bottom:18px;">
-                        <!-- ZONE A -->
-                        <div style="border:2px solid #bae6fd; background:#f0f9ff; border-radius:10px; padding:12px;">
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <span style="font-weight:bold; color:#0369a1; font-size:14px;">❄️ ZONE A (Túi 1 - 8)</span>
-                                <span id="zone-a-status" style="background:#0284c7; color:#fff; font-size:11px; padding:2px 8px; border-radius:8px;">Chờ</span>
-                            </div>
-                            <div style="font-size:12px; color:#475569; margin-top:4px;">Nhiệt độ cuối cùng:</div>
-                            <div id="zone-a-temp" style="font-size:24px; font-weight:bold; color:#0284c7; margin:4px 0;">--.- °C</div>
-                            <div id="zone-a-note" style="font-size:12px; color:#64748b; font-style:italic;">--</div>
-                        </div>
-
-                        <!-- ZONE B -->
-                        <div style="border:2px solid #fed7aa; background:#fff7ed; border-radius:10px; padding:12px;">
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <span style="font-weight:bold; color:#c2410c; font-size:14px;">❄️ ZONE B (Túi 9 - 16)</span>
-                                <span id="zone-b-status" style="background:#ea580c; color:#fff; font-size:11px; padding:2px 8px; border-radius:8px;">Chờ</span>
-                            </div>
-                            <div style="font-size:12px; color:#475569; margin-top:4px;">Nhiệt độ cuối cùng:</div>
-                            <div id="zone-b-temp" style="font-size:24px; font-weight:bold; color:#ea580c; margin:4px 0;">--.- °C</div>
-                            <div id="zone-b-note" style="font-size:12px; color:#64748b; font-style:italic;">--</div>
-                        </div>
-                    </div>
-
-                    <!-- BẢNG 16 HÀNG DỌC BARCODE -->
-                    <div style="margin-bottom:12px;">
-                        <div style="font-weight:600; font-size:13.5px; margin-bottom:8px; color:#334155;">📋 Danh sách Barcode 16 Vị trí (Slot 1 - 16)</div>
-                        <div style="max-height:380px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px;">
-                            <table style="width:100%; border-collapse:collapse; text-align:left; font-size:13px;">
-                                <thead style="background:#f1f5f9; position:sticky; top:0; z-index:1;">
-                                    <tr style="border-bottom:1px solid #cbd5e1;">
-                                        <th style="padding:8px; width:70px; text-align:center;">Vị trí</th>
-                                        <th style="padding:8px; width:90px; text-align:center;">Khu vực</th>
-                                        <th style="padding:8px;">Mã vạch (Barcode)</th>
-                                        <th style="padding:8px; width:110px; text-align:center;">Trạng thái</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="hl7-16-slots-body"></tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <details style="margin-top:10px; font-size:12px; color:#64748b;">
-                        <summary style="cursor:pointer;">Xem bản tin HL7 thô</summary>
-                        <pre id="hl7-raw-content" style="background:#1e293b; color:#38bdf8; padding:10px; border-radius:6px; overflow-x:auto; margin-top:6px; font-size:12px;"></pre>
-                    </details>
-                </div>
-
-                <!-- BẢNG GOOGLE SHEETS DASHBOARD (DÙNG HTMLEMBED SẠCH) -->
                 <div class="sheet-dashboard-card">
                     <div class="sheet-dashboard-header">
                         <div class="sheet-status-pill">
