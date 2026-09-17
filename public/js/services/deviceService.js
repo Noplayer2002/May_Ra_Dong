@@ -1,7 +1,7 @@
 import { db } from '../config/firebase.js';
 import { parseHL7String } from '../parsers/hl7Parser.js';
 
-const GOOGLE_SHEET_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyNcSlXiOoCCAe9ZuEMQDi-ZID4O9t_KV2Vd_HYy5uXyQdBKFbjegzZjgWirnBlNWoB/exec";
+const GOOGLE_SHEET_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwnjxvLfXqW4ql9yDpvSmr05VHzikT5aljv9zUjTTtmQXyRqt7cQYPJuTSXWYXSXKqz/exec";
 
 export const DeviceService = {
     subscribeDevices(callback) {
