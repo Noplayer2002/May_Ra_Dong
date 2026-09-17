@@ -1,12 +1,24 @@
 import { DeviceService } from './services/deviceService.js';
 import { UIRenderer } from './ui/uiRenderer.js';
 
+// Trạng thái ứng dụng
 const AppState = { 
     devices: {},
     selectedDeviceId: null,
     isScanningWifi: false
 };
 
+// 1. HÀM ÉP LÀM MỚI BẢNG TÍNH GOOGLE SHEETS (VƯỢT BỘ NHỚ ĐỆM CACHE)
+function refreshSheetIframe() {
+    const iframe = document.getElementById('google-sheet-iframe');
+    if (iframe) {
+        const baseUrl = "https://docs.google.com/spreadsheets/d/1jaLfUghym0DGokRXKbHBB35qx9IXLwIW4DnyRnJkThg/htmlembed?gid=0&widget=false&chrome=false";
+        // Thêm tham số thời gian Date.now() để trình duyệt bắt buộc kéo dữ liệu mới nhất từ máy chủ Google
+        iframe.src = `${baseUrl}&_t=${Date.now()}`;
+    }
+}
+
+// 2. DỌN DẸP DỮ LIỆU QUÉT WI-FI KHI THOÁT TRANG
 function cleanupWifiScanData() {
     const devId = AppState.selectedDeviceId;
     if (!devId) return;
@@ -23,6 +35,7 @@ function cleanupWifiScanData() {
     }
 }
 
+// 3. ĐIỀU HƯỚNG CHUYỂN TRANG
 function showPage(pageId) {
     if (pageId === 'device-selection-page') {
         cleanupWifiScanData();
@@ -32,12 +45,19 @@ function showPage(pageId) {
     document.getElementById(pageId).classList.add('active');
 }
 
+// 4. CHUYỂN TAB VÀ TỰ ĐỘNG LÀM MỚI DỮ LIỆU
 function switchTab(e, tabId) {
     document.querySelectorAll('.tab-content, .nav a').forEach(el => el.classList.remove('active'));
     document.getElementById(tabId).classList.add('active');
     e.target.classList.add('active');
+
+    // Tự động tải lại Google Sheets khi người dùng bấm vào Tab Bản ghi
+    if (tabId === 'records') {
+        refreshSheetIframe();
+    }
 }
 
+// 5. CHỌN MÁY ĐỂ XEM CHI TIẾT
 function selectDevice(id) {
     AppState.selectedDeviceId = id;
     document.getElementById('selected-device-name').textContent = id;
@@ -55,35 +75,41 @@ function selectDevice(id) {
     showPage('settings-page');
 }
 
+// KHỞI CHẠY KHI TRANG SẴN SÀNG
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Lắng nghe cập nhật thiết bị từ Firebase
+    // 1. LẮNG NGHE DỮ LIỆU THỜI GIAN THỰC TỪ FIREBASE
     DeviceService.subscribeDevices((data) => {
         AppState.devices = data;
 
-        // TỰ ĐỘNG BẮT BẢN TIN HL7 VÀ ĐẨY LÊN GOOGLE SHEETS
+        // Tự động bắt bản tin HL7 đẩy lên Google Sheets
         Object.keys(data).forEach(deviceId => {
             const history = data[deviceId]?.history;
             if (history) {
                 Object.keys(history).forEach(recordKey => {
                     const rawHL7 = history[recordKey]?.raw_hl7;
                     if (rawHL7) {
-                        console.log(`🚀 Bắt được bản ghi [${recordKey}] từ máy [${deviceId}], đang chuyển lên Sheets...`);
+                        console.log(`🚀 Bắt được bản ghi [${recordKey}] từ máy [${deviceId}], đang gửi lên Google Sheets...`);
+                        
                         DeviceService.processAndForwardHL7(deviceId, recordKey, rawHL7).then(() => {
-                            const iframe = document.getElementById('google-sheet-iframe');
-                            if (iframe) iframe.src = iframe.src;
+                            // Đợi đúng 2.5 giây cho Google Sheets ghi hoàn tất vào bảng tính rồi mới tải lại Iframe
+                            console.log("⏳ Chờ Google Sheets ghi dữ liệu...");
+                            setTimeout(() => {
+                                refreshSheetIframe();
+                                console.log("🔄 Đã cập nhật xong dữ liệu mới trên bảng tính!");
+                            }, 2500);
                         });
                     }
                 });
             }
         });
 
-        // Cập nhật danh sách máy ở trang chính
+        // Cập nhật danh sách máy nếu đang ở trang chọn thiết bị
         if (document.getElementById('device-selection-page').classList.contains('active')) {
             const query = document.getElementById('search-input').value;
             UIRenderer.renderDeviceList(AppState.devices, query, selectDevice);
         }
 
-        // Cập nhật chi tiết máy nếu đang xem
+        // Cập nhật thông số máy nếu đang xem chi tiết thiết bị đó
         if (AppState.selectedDeviceId && AppState.devices[AppState.selectedDeviceId]) {
             const currentDev = AppState.devices[AppState.selectedDeviceId];
             UIRenderer.updateDeviceDetails(currentDev);
@@ -96,33 +122,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 2. Tìm kiếm máy
+    // 2. TÌM KIẾM THIẾT BỊ
     document.getElementById('search-input').addEventListener('input', (e) => {
         UIRenderer.renderDeviceList(AppState.devices, e.target.value, selectDevice);
     });
 
-    // 3. Nút quay lại & chuyển Tab
+    // 3. NÚT QUAY LẠI & SỰ KIỆN CHUYỂN TAB
     document.getElementById('btn-back').onclick = () => showPage('device-selection-page');
     document.querySelectorAll('.nav a').forEach(a => {
         a.onclick = (e) => switchTab(e, a.dataset.tab);
     });
 
-    // 4. Nút làm mới Iframe Google Sheets
+    // 4. NÚT TẢI LẠI DỮ LIỆU GOOGLE SHEETS BẰNG TAY
     const btnRefreshSheet = document.getElementById('btn-refresh-sheet');
     if (btnRefreshSheet) {
         btnRefreshSheet.onclick = () => {
-            const iframe = document.getElementById('google-sheet-iframe');
-            if (iframe) {
-                btnRefreshSheet.textContent = "⏳ Đang tải...";
-                iframe.src = iframe.src;
-                setTimeout(() => {
-                    btnRefreshSheet.textContent = "🔄 Tải lại dữ liệu";
-                }, 1200);
-            }
+            btnRefreshSheet.textContent = "⏳ Đang tải...";
+            refreshSheetIframe();
+            setTimeout(() => {
+                btnRefreshSheet.textContent = "🔄 Tải lại dữ liệu";
+            }, 1200);
         };
     }
 
-    // 5. Quét trạng thái Global Ping
+    // 5. QUÉT TRẠNG THÁI TOÀN HỆ THỐNG (GLOBAL PING)
     const pingBtn = document.getElementById('btn-check-device-status');
     pingBtn.onclick = async () => {
         pingBtn.disabled = true;
@@ -132,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
         pingBtn.textContent = "⚡ Quét Trạng Thái (Global Ping)";
     };
 
-    // 6. Quét Wi-Fi
+    // 6. QUÉT WI-FI XUNG QUANH
     const scanWifiBtn = document.getElementById('btn-scan-wifi');
     scanWifiBtn.onclick = async () => {
         const devId = AppState.selectedDeviceId;
@@ -161,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 10000);
     };
 
-    // 7. Lưu cấu hình Wi-Fi
+    // 7. LƯU CẤU HÌNH WI-FI
     document.getElementById('wifi-connect-form').onsubmit = async (e) => {
         e.preventDefault();
         const devId = AppState.selectedDeviceId;
@@ -186,7 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // 8. Lưu cấu hình TCP
+    // 8. LƯU CẤU HÌNH TCP SERVER
     document.getElementById('tcp-form').onsubmit = async (e) => {
         e.preventDefault();
         const devId = AppState.selectedDeviceId;
@@ -209,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
         alert(`✅ Đã cập nhật TCP: ${Object.keys(diffTcp).join(', ')}`);
     };
 
-    // 9. Lưu cấu hình Plasma
+    // 9. LƯU CẤU HÌNH NHIỆT ĐỘ & PID (PLASMA THAWER)
     document.getElementById('plasma-form').onsubmit = async (e) => {
         e.preventDefault();
         const devId = AppState.selectedDeviceId;
