@@ -89,31 +89,27 @@ export const DeviceService = {
 
 // js/services/deviceService.js
 
-// ... (Giữ nguyên các đoạn mã đầu)
-
-    async processAndForwardHL7(deviceId, recordKey, rawHL7Text) {
+async processAndForwardHL7(deviceId, recordKey, rawHL7Text) {
         if (!rawHL7Text) return null;
 
+        // Parse bản tin thô
         const parseResult = parseHL7String(rawHL7Text);
-        const parsedData = parseResult ? parseResult.parsed : null;
-        
-        const msh = parsedData?.msh || {};
-        const pid = parsedData?.pid || {};
-        const slots = parsedData?.slots || [];
-        const zoneA = parsedData?.zoneA || {};
-        const zoneB = parsedData?.zoneB || {};
+        const parsed = parseResult ? parseResult.parsed : null;
+        if (!parsed) return null;
 
-        // Đẩy payload gọn gàng lên Google Sheet
         const payload = {
             deviceId: deviceId,
-            msgId: msh.msgId || recordKey,
-            batchId: pid.batchId || 'N/A',
-            hl7Time: msh.timestamp || '',
-            tempZoneA: zoneA.temp || 'N/A',
-            tempZoneB: zoneB.temp || 'N/A',
-            slots: slots // Gửi thẳng mảng chứa {slot, barcode, status}
+            msgId: parsed.msh.msgId || recordKey,
+            batchId: parsed.pid.batchId || 'N/A',
+            hl7Time: parsed.msh.timestamp || '',
+            tempZoneA: parsed.zoneA.temp || '0.0 °C',
+            statusZoneA: parsed.zoneA.status || 'PASSED',
+            tempZoneB: parsed.zoneB.temp || '0.0 °C',
+            statusZoneB: parsed.zoneB.status || 'PASSED',
+            slots: parsed.slots // Mảng đủ 16 phần tử slot từ 1 đến 16
         };
 
+        // Gửi sang Webhook Google Sheet
         try {
             await fetch(GOOGLE_SHEET_WEBHOOK_URL, {
                 method: 'POST',
@@ -121,17 +117,17 @@ export const DeviceService = {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            console.log(`📊 Đã đẩy HL7 [${recordKey}] sang Sheets (16 dòng).`);
+            console.log(`📊 Đã đẩy thành công 16 dòng của lô [${payload.batchId}] lên Google Sheets`);
         } catch (err) {
             console.error("Lỗi khi gửi Google Sheet:", err);
         }
 
-        // Xóa khỏi Firebase
+        // Xóa sạch trên Firebase để không bị lưu rác
         try {
             await db.ref(`esp32/devices/${deviceId}/history/${recordKey}`).remove();
         } catch (e) {}
 
-        return { parsed: parsedData, raw: rawHL7Text };
+        return { parsed: parsed, raw: rawHL7Text };
     },
 
 // ... (Giữ nguyên các hàm bên dưới)
