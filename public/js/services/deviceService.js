@@ -87,6 +87,10 @@ export const DeviceService = {
         });
     },
 
+// js/services/deviceService.js
+
+// ... (Giữ nguyên các đoạn mã đầu)
+
     async processAndForwardHL7(deviceId, recordKey, rawHL7Text) {
         if (!rawHL7Text) return null;
 
@@ -99,24 +103,15 @@ export const DeviceService = {
         const zoneA = parsedData?.zoneA || {};
         const zoneB = parsedData?.zoneB || {};
 
-        const slotBarcodes = (slots.length === 16) 
-            ? slots.map(s => s.barcode || "") 
-            : Array(16).fill("");
-
-        const totalValidBags = slotBarcodes.filter(b => b.trim() !== "").length;
-
+        // Đẩy payload gọn gàng lên Google Sheet
         const payload = {
             deviceId: deviceId,
             msgId: msh.msgId || recordKey,
             batchId: pid.batchId || 'N/A',
             hl7Time: msh.timestamp || '',
             tempZoneA: zoneA.temp || 'N/A',
-            statusZoneA: zoneA.status || 'N/A',
             tempZoneB: zoneB.temp || 'N/A',
-            statusZoneB: zoneB.status || 'N/A',
-            totalBags: totalValidBags,
-            slots: slotBarcodes,
-            rawHL7: rawHL7Text
+            slots: slots // Gửi thẳng mảng chứa {slot, barcode, status}
         };
 
         try {
@@ -126,21 +121,20 @@ export const DeviceService = {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            console.log(`📊 Đã tự động đẩy HL7 [${recordKey}] sang Google Sheets`);
+            console.log(`📊 Đã đẩy HL7 [${recordKey}] sang Sheets (16 dòng).`);
         } catch (err) {
             console.error("Lỗi khi gửi Google Sheet:", err);
         }
 
-        // Xóa bản ghi trên Firebase sau khi gửi xong
+        // Xóa khỏi Firebase
         try {
             await db.ref(`esp32/devices/${deviceId}/history/${recordKey}`).remove();
-            console.log(`🧹 Đã xóa bản ghi ${recordKey} khỏi Firebase`);
-        } catch (e) {
-            console.warn("Lỗi xóa node history:", e);
-        }
+        } catch (e) {}
 
         return { parsed: parsedData, raw: rawHL7Text };
     },
+
+// ... (Giữ nguyên các hàm bên dưới)
 
     clearAllHistory(deviceId) {
         return db.ref(`esp32/devices/${deviceId}/history`).remove();
