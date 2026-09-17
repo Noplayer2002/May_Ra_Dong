@@ -82,6 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
         AppState.devices = data;
 
         // Tự động bắt bản tin HL7 đẩy lên Google Sheets
+        // TỰ ĐỘNG BẮT BẢN TIN HL7 VÀ ĐẨY LÊN GOOGLE SHEETS
         Object.keys(data).forEach(deviceId => {
             const history = data[deviceId]?.history;
             if (history) {
@@ -91,11 +92,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         console.log(`🚀 Bắt được bản ghi [${recordKey}] từ máy [${deviceId}], đang gửi lên Google Sheets...`);
                         
                         DeviceService.processAndForwardHL7(deviceId, recordKey, rawHL7).then(() => {
-                            // Đợi đúng 2.5 giây cho Google Sheets ghi hoàn tất vào bảng tính rồi mới tải lại Iframe
-                            console.log("⏳ Chờ Google Sheets ghi dữ liệu...");
+                            console.log(`✨ Chu trình hoàn tất: Đã đẩy lên Sheet & Đã tự động xóa [${recordKey}] trên Firebase.`);
+                            
+                            // Chờ 2.5s rồi làm mới bảng tính
                             setTimeout(() => {
                                 refreshSheetIframe();
-                                console.log("🔄 Đã cập nhật xong dữ liệu mới trên bảng tính!");
                             }, 2500);
                         });
                     }
