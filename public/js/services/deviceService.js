@@ -124,7 +124,7 @@ export const DeviceService = {
         }
 
         // Tạm thời comment dòng này lại để test, khi nào sheet ghi ngon lành thì mở ra
-        /await db.ref(`esp32/devices/${deviceId}/history/${recordKey}`).remove();
+        await db.ref(`esp32/devices/${deviceId}/history/${recordKey}`).remove();
 
         return true;
     },
