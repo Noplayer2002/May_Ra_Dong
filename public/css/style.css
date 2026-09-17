@@ -1,16 +1,19 @@
 :root {
-    --primary: #2563eb;
-    --primary-hover: #1d4ed8;
+    --primary: #38bdf8;
+    --primary-hover: #0284c7;
     --success: #10b981;
     --warning: #f59e0b;
     --danger: #ef4444;
-    --bg-body: #f8fafc;
-    --card-bg: #ffffff;
-    --text-main: #0f172a;
-    --text-muted: #64748b;
-    --border-color: #e2e8f0;
+    
+    /* Bảng màu Nền Đen Hiện Đại */
+    --bg-body: #090d16;        /* Đen không gian sâu */
+    --card-bg: #111827;        /* Nền thẻ đen xám sang trọng */
+    --card-border: #1e293b;    /* Viền thẻ mờ */
+    --input-bg: #090d16;       /* Nền ô nhập liệu */
+    --text-main: #f8fafc;      /* Chữ trắng sáng */
+    --text-muted: #94a3b8;     /* Chữ xám phụ */
     --radius: 10px;
-    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+    --shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
 }
 
 * {
@@ -32,9 +35,9 @@ body {
 
 /* Top Bar */
 .top-bar {
-    background: #ffffff;
-    border-bottom: 1px solid var(--border-color);
-    padding: 12px 24px;
+    background: #0f172a;
+    border-bottom: 1px solid var(--card-border);
+    padding: 14px 24px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -43,9 +46,10 @@ body {
     position: sticky;
     top: 0;
     z-index: 50;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
-/* Main Container: Mở rộng tối đa 1400px */
+/* Container */
 .container {
     max-width: 1400px;
     margin: 0 auto;
@@ -56,9 +60,9 @@ body {
 .nav {
     display: flex;
     gap: 8px;
-    background: #ffffff;
+    background: #0f172a;
     padding: 8px 24px;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--card-border);
     overflow-x: auto;
 }
 
@@ -67,20 +71,21 @@ body {
     text-decoration: none;
     font-size: 13.5px;
     font-weight: 500;
-    padding: 8px 16px;
+    padding: 8px 18px;
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
 .nav a:hover {
-    color: var(--primary);
-    background: #f1f5f9;
+    color: var(--text-main);
+    background: #1e293b;
 }
 
 .nav a.active {
-    color: var(--primary);
-    background: #eff6ff;
+    color: #38bdf8;
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.3);
     font-weight: 600;
 }
 
@@ -88,87 +93,87 @@ body {
 .tab-content { display: none; }
 .tab-content.active { display: block; }
 
-/* Các Form (Wi-Fi, TCP, Plasma, Config) căn giữa gọn gàng */
+/* Form Cards căn giữa */
 #wifi, #tcp, #config, #plasma {
     max-width: 580px;
     margin: 0 auto;
     background: var(--card-bg);
     padding: 24px;
     border-radius: var(--radius);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--card-border);
     box-shadow: var(--shadow);
 }
 
-/* Typography & Form Controls */
+/* Section Title */
 .section-title {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--text-muted);
-    margin: 20px 0 10px 0;
+    letter-spacing: 0.8px;
+    color: var(--primary);
+    margin: 22px 0 12px 0;
     padding-bottom: 6px;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--card-border);
 }
 
+/* Form Controls */
 .row {
-    margin-bottom: 14px;
+    margin-bottom: 15px;
 }
 
 .label {
     font-size: 13px;
     font-weight: 500;
-    color: var(--text-main);
+    color: var(--text-muted);
     margin-bottom: 6px;
 }
 
 input[type="text"], input[type="password"], input[type="number"], select {
     width: 100%;
-    padding: 10px 12px;
+    padding: 10px 14px;
     font-size: 14px;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--card-border);
     border-radius: 6px;
     outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
-    background: #fafafa;
+    background: var(--input-bg);
+    color: #ffffff;
+    transition: all 0.2s;
 }
 
 input:focus {
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
 }
 
 /* Buttons */
 .btn {
     width: 100%;
-    padding: 10px 16px;
+    padding: 11px 16px;
     border: none;
     border-radius: 6px;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    background: var(--primary);
+    background: #0284c7;
     color: #ffffff;
-    transition: background 0.2s, transform 0.1s;
+    transition: all 0.2s;
     display: inline-flex;
     justify-content: center;
     align-items: center;
     gap: 8px;
 }
-
-.btn:hover { background: var(--primary-hover); }
+.btn:hover { background: #0369a1; }
 .btn:active { transform: scale(0.99); }
-.btn-orange { background: #f97316; }
-.btn-orange:hover { background: #ea580c; }
-.btn-blue { background: #0284c7; }
-.btn-blue:hover { background: #0369a1; }
+.btn-orange { background: #ea580c; }
+.btn-orange:hover { background: #c2410c; }
+.btn-blue { background: #0ea5e9; }
+.btn-blue:hover { background: #0284c7; }
 
 .btn-secondary {
-    background: #ffffff;
+    background: #1e293b;
     color: var(--text-main);
-    border: 1px solid var(--border-color);
-    padding: 6px 12px;
+    border: 1px solid var(--card-border);
+    padding: 7px 14px;
     font-size: 13px;
     font-weight: 500;
     border-radius: 6px;
@@ -177,56 +182,82 @@ input:focus {
     transition: all 0.2s;
 }
 .btn-secondary:hover {
-    background: #f1f5f9;
-    border-color: #cbd5e1;
+    background: #334155;
+    border-color: #475569;
 }
 
-/* Telemetry Info Cards */
+/* Telemetry Info */
 .info-item {
     display: flex;
     justify-content: space-between;
-    padding: 10px 0;
-    border-bottom: 1px dashed var(--border-color);
+    padding: 11px 0;
+    border-bottom: 1px dashed var(--card-border);
     font-size: 13.5px;
 }
 .info-label { color: var(--text-muted); }
 .info-value { font-weight: 600; font-family: monospace; font-size: 14px; }
 
-/* Wifi List Items */
+/* ==========================================================================
+   DANH SÁCH WI-FI (CHẤM TRÒN PHÁT SÁNG TINH GIẢN)
+   ========================================================================== */
 .wifi-list-box {
-    max-height: 180px;
+    max-height: 200px;
     overflow-y: auto;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--card-border);
     border-radius: 6px;
     margin-bottom: 15px;
-    background: #f8fafc;
+    background: #090d16;
 }
+
 .wifi-item {
-    padding: 10px 12px;
+    padding: 11px 14px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     cursor: pointer;
-    border-bottom: 1px solid #f1f5f9;
-    font-size: 13px;
+    border-bottom: 1px solid #1e293b;
+    font-size: 13.5px;
+    transition: background 0.15s;
 }
-.wifi-item:hover { background: #e2e8f0; }
+.wifi-item:hover { background: #1e293b; }
+
+/* Chấm tròn sóng Wi-Fi */
+.wifi-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.wifi-dot.dot-green {
+    background-color: #10b981;
+    box-shadow: 0 0 8px #10b981;
+}
+.wifi-dot.dot-yellow {
+    background-color: #f59e0b;
+    box-shadow: 0 0 8px #f59e0b;
+}
+.wifi-dot.dot-red {
+    background-color: #ef4444;
+    box-shadow: 0 0 8px #ef4444;
+}
 
 /* Device Selector Page */
 .search-box {
+    width: 100%;
     margin-bottom: 15px;
     padding: 12px 16px;
     border-radius: var(--radius);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--card-border);
     font-size: 15px;
-    background: #ffffff;
+    background: var(--card-bg);
+    color: #fff;
 }
 .device-row {
     background: var(--card-bg);
     padding: 14px 18px;
     margin-bottom: 10px;
     border-radius: var(--radius);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--card-border);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -240,7 +271,88 @@ input:focus {
 }
 
 /* ==========================================================================
-   TAB BẢN GHI (GOOGLE SHEETS DASHBOARD - THIẾT KẾ ĐỘC QUYỀN)
+   ANIMATION TRẠNG THÁI (PHÁT SÁNG NỔI BẬT TRÊN NỀN ĐEN)
+   ========================================================================== */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12.5px;
+    font-weight: 600;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* Online: Xanh thở */
+.status-badge.online-text {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.4);
+}
+.dot.online {
+    background-color: #10b981;
+    box-shadow: 0 0 10px #10b981;
+    animation: pulse-online 2s infinite ease-in-out;
+}
+@keyframes pulse-online {
+    0% { transform: scale(0.9); box-shadow: 0 0 4px #10b981; }
+    50% { transform: scale(1.15); box-shadow: 0 0 12px #10b981; }
+    100% { transform: scale(0.9); box-shadow: 0 0 4px #10b981; }
+}
+
+/* Running: Sóng radar xanh dương */
+.status-badge.running-text {
+    background: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.4);
+}
+.dot.running {
+    background-color: #38bdf8;
+    animation: pulse-running 1.2s infinite ease-out;
+}
+@keyframes pulse-running {
+    0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.9); }
+    70% { box-shadow: 0 0 0 8px rgba(56, 189, 248, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+}
+
+/* Error: Chớp đỏ khẩn cấp */
+.status-badge.error-text {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+}
+.dot.error {
+    background-color: #ef4444;
+    animation: strobe-error 0.8s infinite;
+}
+@keyframes strobe-error {
+    0%, 100% { opacity: 1; box-shadow: 0 0 12px #ef4444; }
+    50% { opacity: 0.2; box-shadow: none; }
+}
+
+/* Offline */
+.status-badge.offline-text {
+    background: #1e293b;
+    color: #64748b;
+    border: 1px solid #334155;
+}
+.dot.offline { background-color: #64748b; }
+
+.info-value.online-text { color: #34d399; }
+.info-value.running-text { color: #38bdf8; }
+.info-value.error-text { color: #f87171; }
+.info-value.offline-text { color: #64748b; }
+
+/* ==========================================================================
+   TAB GOOGLE SHEETS DASHBOARD
    ========================================================================== */
 #records {
     max-width: 100% !important;
@@ -248,51 +360,46 @@ input:focus {
 }
 
 .sheet-dashboard-card {
-    background: #ffffff;
-    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
     border-radius: 12px;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
+    box-shadow: var(--shadow);
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
 }
 
 .sheet-dashboard-header {
-    background: #ffffff;
-    border-bottom: 1px solid var(--border-color);
+    background: #0f172a;
+    border-bottom: 1px solid var(--card-border);
     padding: 12px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
 }
 
 .sheet-status-pill {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: #ecfdf5;
-    border: 1px solid #a7f3d0;
-    color: #065f46;
-    padding: 5px 12px;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #34d399;
+    padding: 6px 14px;
     border-radius: 20px;
     font-size: 13px;
     font-weight: 600;
 }
 
-/* Đèn LED nhấp nháy trực tiếp */
 .pulse-led {
     width: 8px;
     height: 8px;
     border-radius: 50%;
     background-color: var(--success);
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    box-shadow: 0 0 8px #10b981;
     animation: led-pulse 1.8s infinite;
 }
 
 @keyframes led-pulse {
-    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.8); }
     70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
     100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
 }
@@ -301,7 +408,7 @@ input:focus {
     width: 100%;
     height: calc(100vh - 180px);
     min-height: 600px;
-    background: #ffffff;
+    background: #ffffff; /* Giữ nền trắng bên trong bảng tính để dễ đọc số liệu */
 }
 
 .sheet-iframe-container iframe {
