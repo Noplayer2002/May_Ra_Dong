@@ -88,7 +88,7 @@ export const DeviceService = {
         });
     },
 
-   // js/services/deviceService.js
+// js/services/deviceService.js
 
     async processAndForwardHL7(deviceId, recordKey, rawHL7Text) {
         if (!rawHL7Text) return null;
@@ -101,7 +101,7 @@ export const DeviceService = {
 
         const payload = {
             hl7Time: msh.timestamp || '',
-            deviceId: deviceId || msh.sender || 'THAWER_16', // Nếu không có deviceId thì lấy THAWER_16 từ bản tin
+            deviceId: deviceId || msh.sender || 'THAWER_16',
             msgId: msh.msgId || recordKey || '',
             batchId: pid.batchId || '',
             tempZoneA: zoneA.temp || 'N/A',
@@ -109,24 +109,25 @@ export const DeviceService = {
             slots: slots
         };
 
+        console.log("📦 Dữ liệu gửi đi:", payload);
+
         try {
             await fetch(GOOGLE_SHEET_WEBHOOK_URL, {
-                method: 'POST', 
+                method: 'POST',
                 mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify(payload)
             });
             console.log("✅ Đã gửi bản ghi sang Google Sheets thành công!");
         } catch (err) {
-            console.error("Lỗi gửi Google Sheet:", err);
+            console.error("❌ Lỗi gửi Google Sheet:", err);
         }
 
-        try { 
-            await db.ref(`esp32/devices/${deviceId}/history/${recordKey}`).remove(); 
-        } catch (e) {}
+        // Tạm thời comment dòng này lại để test, khi nào sheet ghi ngon lành thì mở ra
+        // await db.ref(`esp32/devices/${deviceId}/history/${recordKey}`).remove();
 
         return true;
-    },
+    }
 
     clearAllHistory(deviceId) {
         return db.ref(`esp32/devices/${deviceId}/history`).remove();
