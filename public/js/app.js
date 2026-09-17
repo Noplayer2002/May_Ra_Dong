@@ -4,10 +4,11 @@ import { UIRenderer } from './ui/uiRenderer.js';
 const AppState = { 
     devices: {},
     selectedDeviceId: null,
-    isScanningWifi: false
+    isScanningWifi: false,
+    latestHL7ByDevice: {} // Cache dữ liệu HL7 mới nhất theo từng deviceId
 };
 
-// Dọn dẹp wifi_list khi rời trang
+// Dọn dẹp danh sách Wi-Fi khi người dùng rời khỏi trang chi tiết máy
 function cleanupWifiScanData() {
     const devId = AppState.selectedDeviceId;
     if (!devId) return;
@@ -24,30 +25,48 @@ function cleanupWifiScanData() {
     }
 }
 
-// Chuyển trang
+// Chuyển trang (Màn hình chọn máy <-> Màn hình cấu hình máy)
 function showPage(pageId) {
     if (pageId === 'device-selection-page') {
         cleanupWifiScanData();
         AppState.selectedDeviceId = null;
     }
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById(pageId).classList.add('active');
+    const targetPage = document.getElementById(pageId);
+    if (targetPage) targetPage.classList.add('active');
 }
 
-// Chuyển Tab
+// Chuyển Tab bên trong màn hình cấu hình máy
 function switchTab(e, tabId) {
     document.querySelectorAll('.tab-content, .nav a').forEach(el => el.classList.remove('active'));
-    document.getElementById(tabId).classList.add('active');
+    const targetTab = document.getElementById(tabId);
+    if (targetTab) targetTab.classList.add('active');
     e.target.classList.add('active');
 }
 
-// Chọn máy
+// Cập nhật giao diện chi tiết HL7 (Zone A, Zone B và 16 barcode dọc)
+function renderCurrentDeviceHL7(deviceId) {
+    const cached = AppState.latestHL7ByDevice[deviceId];
+    if (cached && cached.raw) {
+        UIRenderer.displayHL7Detail(cached.raw, cached.key);
+    } else {
+        const dev = AppState.devices[deviceId];
+        if (dev?.last_hl7?.raw) {
+            UIRenderer.displayHL7Detail(dev.last_hl7.raw, dev.last_hl7.key);
+        }
+    }
+}
+
+// Chọn một máy từ danh sách
 function selectDevice(id) {
     AppState.selectedDeviceId = id;
     document.getElementById('selected-device-name').textContent = id;
-    const device = AppState.devices[id];
+    const device = AppState.devices[id] || {};
     
+    // 1. Cập nhật thông tin phần cứng & cấu hình
     UIRenderer.updateDeviceDetails(device);
+
+    // 2. Cập nhật danh sách Wi-Fi (nếu đã quét trước đó)
     if (device.wifi_list) {
         UIRenderer.renderWifiList(device.wifi_list, (ssid) => {
             document.getElementById('ssid').value = ssid;
@@ -55,24 +74,49 @@ function selectDevice(id) {
         });
     }
 
+    // 3. Hiển thị thông tin HL7 (Nhiệt độ cuối Zone A/B & 16 dòng Barcode)
+    renderCurrentDeviceHL7(id);
+
+    // 4. Chuyển sang màn hình quản trị máy
     showPage('settings-page');
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Lắng nghe toàn bộ thiết bị từ Firebase
+    // =========================================================================
+    // 1. LẮNG NGHE DỮ LIỆU REALTIME TỪ FIREBASE
+    // =========================================================================
     DeviceService.subscribeDevices((data) => {
         AppState.devices = data;
 
-        // TỰ ĐỘNG BẮT BẢN TIN HL7 ĐẨY SANG GOOGLE SHEETS
+        // Xử lý các bản tin HL7 mới xuất hiện trong node `history`
         Object.keys(data).forEach(deviceId => {
-            const history = data[deviceId]?.history;
+            const dev = data[deviceId];
+
+            // Cache lại bản tin `last_hl7` đã lưu từ trước (nếu có)
+            if (dev?.last_hl7?.raw && !AppState.latestHL7ByDevice[deviceId]) {
+                AppState.latestHL7ByDevice[deviceId] = {
+                    key: dev.last_hl7.key || 'LAST',
+                    raw: dev.last_hl7.raw
+                };
+            }
+
+            const history = dev?.history;
             if (history) {
                 Object.keys(history).forEach(recordKey => {
                     const rawHL7 = history[recordKey]?.raw_hl7;
                     if (rawHL7) {
-                        console.log(`🚀 Phát hiện bản ghi mới [${recordKey}] từ [${deviceId}], đang đẩy sang Google Sheets...`);
+                        console.log(`🚀 Phát hiện bản ghi mới [${recordKey}] từ máy [${deviceId}]`);
+
+                        // Lưu ngay vào cache của client
+                        AppState.latestHL7ByDevice[deviceId] = { key: recordKey, raw: rawHL7 };
+
+                        // Nếu người dùng đang mở đúng máy này -> cập nhật UI HL7 ngay lập tức
+                        if (AppState.selectedDeviceId === deviceId) {
+                            UIRenderer.displayHL7Detail(rawHL7, recordKey);
+                        }
+
+                        // Đẩy sang Google Sheets và dọn dẹp hàng đợi Firebase
                         DeviceService.processAndForwardHL7(deviceId, recordKey, rawHL7).then(() => {
-                            // Tự động refresh nhẹ iframe sau khi đẩy thành công
                             const iframe = document.getElementById('google-sheet-iframe');
                             if (iframe) iframe.src = iframe.src;
                         });
@@ -81,37 +125,47 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Cập nhật giao diện danh sách máy
+        // Cập nhật danh sách máy nếu đang ở trang chủ
         if (document.getElementById('device-selection-page').classList.contains('active')) {
             const query = document.getElementById('search-input').value;
             UIRenderer.renderDeviceList(AppState.devices, query, selectDevice);
         }
 
-        // Cập nhật thông số chi tiết máy đang xem
+        // Cập nhật chi tiết nếu đang ở màn hình xem máy
         if (AppState.selectedDeviceId && AppState.devices[AppState.selectedDeviceId]) {
             const currentDev = AppState.devices[AppState.selectedDeviceId];
             UIRenderer.updateDeviceDetails(currentDev);
+
             if (currentDev.wifi_list) {
                 UIRenderer.renderWifiList(currentDev.wifi_list, (ssid) => {
                     document.getElementById('ssid').value = ssid;
                     document.getElementById('wifi-pass').focus();
                 });
             }
+
+            // Đảm bảo dữ liệu bản ghi HL7 luôn được hiển thị
+            renderCurrentDeviceHL7(AppState.selectedDeviceId);
         }
     });
 
-    // 2. Tìm kiếm máy
+    // =========================================================================
+    // 2. TÌM KIẾM MÁY
+    // =========================================================================
     document.getElementById('search-input').addEventListener('input', (e) => {
         UIRenderer.renderDeviceList(AppState.devices, e.target.value, selectDevice);
     });
 
-    // 3. Nút quay lại & Chuyển Tab
+    // =========================================================================
+    // 3. ĐIỀU HƯỚNG QUAY LẠI & CHUYỂN TAB
+    // =========================================================================
     document.getElementById('btn-back').onclick = () => showPage('device-selection-page');
     document.querySelectorAll('.nav a').forEach(a => {
         a.onclick = (e) => switchTab(e, a.dataset.tab);
     });
 
-    // 4. Nút làm mới bảng tính Google Sheets trong tab Records
+    // =========================================================================
+    // 4. LÀM MỚI BẢNG TÍNH GOOGLE SHEETS
+    // =========================================================================
     const btnRefreshSheet = document.getElementById('btn-refresh-sheet');
     if (btnRefreshSheet) {
         btnRefreshSheet.onclick = () => {
@@ -126,17 +180,26 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // 5. Global Ping
+    // =========================================================================
+    // 5. GLOBAL PING (QUÉT TRẠNG THÁI TOÀN HỆ THỐNG)
+    // =========================================================================
     const pingBtn = document.getElementById('btn-check-device-status');
     pingBtn.onclick = async () => {
         pingBtn.disabled = true;
         pingBtn.textContent = "⏳ Đang phát sóng...";
-        await DeviceService.broadcastPing();
-        pingBtn.disabled = false;
-        pingBtn.textContent = "⚡ Quét Trạng Thái (Global Ping)";
+        try {
+            await DeviceService.broadcastPing();
+        } catch (err) {
+            console.error("Lỗi khi ping:", err);
+        } finally {
+            pingBtn.disabled = false;
+            pingBtn.textContent = "⚡ Quét Trạng Thái (Global Ping)";
+        }
     };
 
-    // 6. Quét Wi-Fi
+    // =========================================================================
+    // 6. QUÉT WI-FI XUNG QUANH MÁY
+    // =========================================================================
     const scanWifiBtn = document.getElementById('btn-scan-wifi');
     scanWifiBtn.onclick = async () => {
         const devId = AppState.selectedDeviceId;
@@ -165,7 +228,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 10000);
     };
 
-    // 7. Lưu Wi-Fi
+    // =========================================================================
+    // 7. LƯU CẤU HÌNH WI-FI
+    // =========================================================================
     document.getElementById('wifi-connect-form').onsubmit = async (e) => {
         e.preventDefault();
         const devId = AppState.selectedDeviceId;
@@ -196,7 +261,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // 8. Lưu TCP
+    // =========================================================================
+    // 8. LƯU CẤU HÌNH TCP SERVER
+    // =========================================================================
     document.getElementById('tcp-form').onsubmit = async (e) => {
         e.preventDefault();
         const devId = AppState.selectedDeviceId;
@@ -204,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const currentTcp = AppState.devices[devId]?.tcp || {};
         const newIp = document.getElementById('server_ip').value.trim();
-        const newPort = parseInt(document.getElementById('server_port').value);
+        const newPort = parseInt(document.getElementById('server_port').value, 10);
 
         const diffTcp = {};
         if (newIp !== (currentTcp.server_ip || '')) diffTcp.server_ip = newIp;
@@ -215,11 +282,17 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        await DeviceService.updateTcp(devId, diffTcp);
-        alert(`✅ Đã cập nhật TCP: ${Object.keys(diffTcp).join(', ')}`);
+        try {
+            await DeviceService.updateTcp(devId, diffTcp);
+            alert(`✅ Đã cập nhật TCP: ${Object.keys(diffTcp).join(', ')}`);
+        } catch (err) {
+            alert("❌ Lỗi khi cập nhật TCP: " + err.message);
+        }
     };
 
-    // 9. Lưu Cấu hình Plasma
+    // =========================================================================
+    // 9. LƯU CẤU HÌNH PLASMA (NHIỆT ĐỘ & PID)
+    // =========================================================================
     document.getElementById('plasma-form').onsubmit = async (e) => {
         e.preventDefault();
         const devId = AppState.selectedDeviceId;
@@ -256,7 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await DeviceService.updatePlasma(devId, diffPayload);
             alert(`✅ Đã cập nhật thành công ${changedKeys.length} thông số!`);
         } catch (err) {
-            alert("❌ Lỗi khi gửi cấu hình xuống thiết bị!");
+            alert("❌ Lỗi khi gửi cấu hình xuống thiết bị: " + err.message);
         }
     };
 });

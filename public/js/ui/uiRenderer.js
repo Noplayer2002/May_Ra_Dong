@@ -104,34 +104,68 @@ updateDeviceDetails(device) {
         });
     },
 
-    displayHL7Detail(rawString, key) {
-        const data = parseHL7String(rawString);
-        if (!data) return;
+    // js/ui/uiRenderer.js (thay thế hàm displayHL7Detail cũ)
 
-        document.getElementById('record-empty-state').style.display = 'none';
-        document.getElementById('record-detail-view').style.display = 'block';
+displayHL7Detail(rawString, key) {
+    if (!rawString) return;
+    const data = parseHL7String(rawString);
+    if (!data) return;
 
-        const { msh, pid, notes, obxList } = data.parsed;
-        document.getElementById('hl7-msg-id').textContent = msh.msgId || key;
-        document.getElementById('hl7-batch-id').textContent = pid.batchId || 'N/A';
-        document.getElementById('hl7-timestamp').textContent = formatHL7Date(msh.timestamp);
-        document.getElementById('hl7-sender').textContent = `${msh.sender || 'N/A'} (${msh.facility || 'N/A'})`;
+    const { msh, pid, slots, zoneA, zoneB } = data.parsed;
 
-        const zoneContainer = document.getElementById('hl7-zones');
-        zoneContainer.innerHTML = notes.map(note => {
-            const isPass = note.includes('PASSED');
-            return `<div class="zone-box ${isPass ? 'zone-pass' : 'zone-fail'}"><strong>${isPass ? '✅' : '⚠️'}</strong> ${note}</div>`;
-        }).join('') || '<div style="color:#999; font-size:13px;">Không có ghi chú nhiệt độ zone.</div>';
+    // 1. Thông tin chung
+    document.getElementById('hl7-batch-id').textContent = pid.batchId || 'N/A';
+    document.getElementById('hl7-msg-id').textContent = msh.msgId || key || 'N/A';
+    document.getElementById('hl7-sender').textContent = `${msh.sender || 'N/A'} (${msh.facility || 'N/A'})`;
+    const formattedDate = formatHL7Date(msh.timestamp);
+    document.getElementById('hl7-timestamp').textContent = formattedDate;
+    document.getElementById('hl7-timestamp-badge').textContent = `Cập nhật: ${formattedDate}`;
 
-        const bagsTbody = document.getElementById('hl7-bags-body');
-        bagsTbody.innerHTML = obxList.map(item => `
-            <tr>
-                <td style="text-align:center; font-weight:bold; color:#555;">${item.bagIndex || item.seq}</td>
-                <td style="font-family:monospace; font-weight:bold; color:#1565c0;">${item.barcode || 'N/A'}</td>
-                <td style="text-align:center;"><span style="color:#2e7d32; font-weight:bold;">${item.status}</span></td>
+    // 2. Cập nhật Zone A & Zone B (Nhiệt độ cuối)
+    document.getElementById('zone-a-temp').textContent = zoneA.temp || '--.- °C';
+    document.getElementById('zone-a-status').textContent = zoneA.status || 'HOÀN TẤT';
+    document.getElementById('zone-a-note').textContent = zoneA.note || 'Không có ghi chú thêm';
+
+    document.getElementById('zone-b-temp').textContent = zoneB.temp || '--.- °C';
+    document.getElementById('zone-b-status').textContent = zoneB.status || 'HOÀN TẤT';
+    document.getElementById('zone-b-note').textContent = zoneB.note || 'Không có ghi chú thêm';
+
+    // 3. Render đúng 16 hàng dọc cho 16 vị trí (Slot 1 -> 16)
+    const tbody = document.getElementById('hl7-16-slots-body');
+    tbody.innerHTML = slots.map(item => {
+        const isZoneA = item.zone === 'A';
+        const hasBarcode = Boolean(item.barcode);
+        const rowBg = item.slot % 2 === 0 ? '#fafafa' : '#ffffff';
+        const zoneBadgeStyle = isZoneA 
+            ? 'background:#e0f2fe; color:#0369a1;' 
+            : 'background:#ffedd5; color:#c2410c;';
+
+        return `
+            <tr style="background:${rowBg}; border-bottom:1px solid #f1f5f9;">
+                <td style="text-align:center; font-weight:bold; color:#475569; padding:8px 10px;">
+                    #${item.slot.toString().padStart(2, '0')}
+                </td>
+                <td style="text-align:center; padding:8px 10px;">
+                    <span style="padding:2px 8px; border-radius:6px; font-weight:600; font-size:11px; ${zoneBadgeStyle}">
+                        Zone ${item.zone}
+                    </span>
+                </td>
+                <td style="padding:8px 10px;">
+                    ${hasBarcode 
+                        ? `<span style="font-family:monospace; font-weight:bold; color:#0f766e; font-size:13.5px;">🏷️ ${item.barcode}</span>` 
+                        : `<span style="color:#94a3b8; font-style:italic;">(Vị trí trống)</span>`
+                    }
+                </td>
+                <td style="text-align:center; padding:8px 10px;">
+                    <span style="font-weight:600; font-size:12px; color:${hasBarcode ? '#16a34a' : '#94a3b8'};">
+                        ${hasBarcode ? (item.status || 'OK') : '---'}
+                    </span>
+                </td>
             </tr>
-        `).join('') || '<tr><td colspan="3" style="text-align:center; color:#999;">Không có thông tin túi.</td></tr>';
+        `;
+    }).join('');
 
-        document.getElementById('hl7-raw-content').textContent = data.raw;
-    }
-};
+    // 4. Raw HL7 text
+    const rawEl = document.getElementById('hl7-raw-content');
+    if (rawEl) rawEl.textContent = data.raw;
+}
