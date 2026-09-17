@@ -127,47 +127,57 @@ export const DeviceService = {
         });
     },
 
-    /**
-     * Xử lý bản tin HL7:
-     * 1. Parse bản tin
-     * 2. Đẩy sang Google Sheets qua Webhook
-     * 3. Lưu lại bản ghi gần nhất vào `esp32/devices/{deviceId}/last_hl7` (giúp giữ trạng thái UI)
-     * 4. Xóa bản ghi tạm trong `history/{recordKey}` để chống tràn bộ nhớ DB
-     */
-    async processAndForwardHL7(deviceId, recordKey, rawHL7Text) {
-        if (!deviceId || !rawHL7Text) return null;
+// XỬ lý bản tin HL
 
-        const parseResult = parseHL7String(rawHL7Text);
-        const parsed = parseResult ? parseResult.parsed : { msh: {}, pid: {}, slots: [], zoneA: {}, zoneB: [] };
-        const { msh, pid, slots, zoneA, zoneB } = parsed;
+async processAndForwardHL7(deviceId, recordKey, rawHL7Text) {
+    if (!rawHL7Text) return null;
 
-        // Trích xuất danh sách barcode đã quét
-        const barcodes = slots ? slots.filter(s => s.barcode).map(s => `[Slot ${s.slot}] ${s.barcode}`) : [];
+    const parseResult = parseHL7String(rawHL7Text);
+    const { msh, pid, slots, zoneA, zoneB } = parseResult ? parseResult.parsed : { 
+        msh: {}, pid: {}, slots: [], zoneA: {}, zoneB: {} 
+    };
 
-        const payload = {
-            deviceId: deviceId,
-            msgId: msh.msgId || recordKey,
-            batchId: pid.batchId || 'N/A',
-            hl7Time: msh.timestamp || '',
-            totalBags: barcodes.length,
-            zoneATemp: zoneA?.temp || 'N/A',
-            zoneBTemp: zoneB?.temp || 'N/A',
-            barcodes: barcodes,
-            rawHL7: rawHL7Text
-        };
+    // Chuẩn hóa mảng 16 barcode đúng thứ tự slot 1 -> 16
+    const slotBarcodes = slots && slots.length === 16 
+        ? slots.map(s => s.barcode || "")
+        : Array(16).fill("");
 
-        // Gửi sang Webhook Google Sheets
-        try {
-            await fetch(GOOGLE_SHEET_WEBHOOK_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            console.log(`📊 Đã đẩy bản ghi [${recordKey}] từ [${deviceId}] sang Google Sheets`);
-        } catch (err) {
-            console.error("❌ Lỗi khi gửi Google Sheets:", err);
-        }
+    // Đếm số túi thực tế có barcode
+    const actualTotalBags = slotBarcodes.filter(b => b.trim() !== "").length;
+
+    const payload = {
+        deviceId: deviceId,
+        msgId: msh.msgId || recordKey,
+        batchId: pid.batchId || 'N/A',
+        hl7Time: msh.timestamp || '',
+        tempZoneA: zoneA.temp || 'N/A',
+        statusZoneA: zoneA.status || 'N/A',
+        tempZoneB: zoneB.temp || 'N/A',
+        statusZoneB: zoneB.status || 'N/A',
+        totalBags: actualTotalBags,
+        slots: slotBarcodes, // Mảng 16 phần tử cho 16 cột
+        rawHL7: rawHL7Text
+    };
+
+    // Gửi sang Webhook Google Sheet
+    try {
+        await fetch(GOOGLE_SHEET_WEBHOOK_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        console.log(`📊 Đã đẩy HL7 [${recordKey}] gồm Zone A/B và 16 túi sang Google Sheets`);
+    } catch (err) {
+        console.error("Lỗi khi gửi Google Sheet:", err);
+    }
+
+    // Xóa bản ghi đã xử lý trên Firebase để giải phóng bộ nhớ
+    await db.ref(`esp32/devices/${deviceId}/history/${recordKey}`).remove();
+    console.log(`🧹 Đã giải phóng bộ nhớ: Xóa ${recordKey} trên Firebase`);
+
+    return { parsed: parseResult.parsed, raw: rawHL7Text };
+}
 
         // Lưu bản ghi mới nhất vào node `last_hl7` để UI luôn có dữ liệu hiển thị (kể cả sau F5)
         try {
