@@ -92,43 +92,38 @@ export const DeviceService = {
 async processAndForwardHL7(deviceId, recordKey, rawHL7Text) {
         if (!rawHL7Text) return null;
 
-        // Parse bản tin thô
         const parseResult = parseHL7String(rawHL7Text);
-        const parsed = parseResult ? parseResult.parsed : null;
-        if (!parsed) return null;
+        const parsedData = parseResult ? parseResult.parsed : null;
+        if (!parsedData) return null;
+        
+        const { msh, pid, slots, zoneA, zoneB } = parsedData;
 
         const payload = {
+            hl7Time: msh.timestamp || '',
             deviceId: deviceId,
-            msgId: parsed.msh.msgId || recordKey,
-            batchId: parsed.pid.batchId || 'N/A',
-            hl7Time: parsed.msh.timestamp || '',
-            tempZoneA: parsed.zoneA.temp || '0.0 °C',
-            statusZoneA: parsed.zoneA.status || 'PASSED',
-            tempZoneB: parsed.zoneB.temp || '0.0 °C',
-            statusZoneB: parsed.zoneB.status || 'PASSED',
-            slots: parsed.slots // Mảng đủ 16 phần tử slot từ 1 đến 16
+            msgId: msh.msgId || recordKey,
+            batchId: pid.batchId || '',
+            tempZoneA: zoneA.temp || 'N/A',
+            tempZoneB: zoneB.temp || 'N/A',
+            slots: slots
         };
 
-        // Gửi sang Webhook Google Sheet
         try {
             await fetch(GOOGLE_SHEET_WEBHOOK_URL, {
-                method: 'POST',
-                mode: 'no-cors',
+                method: 'POST', mode: 'no-cors',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            console.log(`📊 Đã đẩy thành công 16 dòng của lô [${payload.batchId}] lên Google Sheets`);
         } catch (err) {
-            console.error("Lỗi khi gửi Google Sheet:", err);
+            console.error("Lỗi gửi Google Sheet:", err);
         }
 
-        // Xóa sạch trên Firebase để không bị lưu rác
-        try {
-            await db.ref(`esp32/devices/${deviceId}/history/${recordKey}`).remove();
-        } catch (e) {}
+        // Đẩy xong thì xóa luôn trên Firebase
+        try { await db.ref(`esp32/devices/${deviceId}/history/${recordKey}`).remove(); } 
+        catch (e) {}
 
-        return { parsed: parsed, raw: rawHL7Text };
-    },
+        return true;
+    }
 
 // ... (Giữ nguyên các hàm bên dưới)
 
