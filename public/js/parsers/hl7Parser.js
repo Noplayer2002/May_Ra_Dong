@@ -1,21 +1,25 @@
+// js/parsers/hl7Parser.js
+
 export function parseHL7String(raw) {
     if (!raw) return null;
-    const normalized = raw.replace(/\r\n/g, '\n')
-                          .replace(/\r/g, '\n')
-                          .replace(/(MSH|PID|OBR|NTE|OBX)\|/g, '\n$1|')
-                          .trim();
-                          
+
+    // 1. Tách các segment bị dính liền thành từng dòng riêng biệt
+    const normalized = raw
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n')
+        .replace(/(MSH|PID|OBR|NTE|OBX)\|/g, '\n$1|') // Tách dính liền: PASSEDNTE| -> \nNTE|, FOBX| -> \nOBX|
+        .trim();
+
     const lines = normalized.split('\n').map(l => l.trim()).filter(Boolean);
 
     const result = {
         msh: {},
         pid: {},
-        notes: [],
-        zoneA: { temp: 'N/A', status: 'N/A', note: '' },
-        zoneB: { temp: 'N/A', status: 'N/A', note: '' },
+        zoneA: { temp: '0.0 °C', status: 'PASSED', duration: '' },
+        zoneB: { temp: '0.0 °C', status: 'PASSED', duration: '' },
         slots: Array.from({ length: 16 }, (_, i) => ({
             slot: i + 1,
-            zone: i < 8 ? 'A' : 'B',
+            zone: (i < 8) ? 'Zone A' : 'Zone B',
             barcode: '',
             status: 'Trống'
         }))
@@ -25,6 +29,7 @@ export function parseHL7String(raw) {
         const parts = line.split('|');
         const seg = parts[0];
 
+        // Header MSH
         if (seg === 'MSH') {
             result.msh = {
                 sender: parts[2] || '',
@@ -33,37 +38,51 @@ export function parseHL7String(raw) {
                 msgType: parts[8] || '',
                 msgId: parts[9] || ''
             };
-        } else if (seg === 'PID') {
+        } 
+        // Batch PID
+        else if (seg === 'PID') {
             result.pid = {
-                batchId: parts[3] || '',
+                batchId: parts[3] || 'N/A',
                 batchType: parts[5] || ''
             };
-        } else if (seg === 'NTE') {
-            const comment = parts[3] || '';
-            result.notes.push(comment);
+        } 
+        // Nhiệt độ Zone (NTE)
+        else if (seg === 'NTE') {
+            // Nối lại toàn bộ nội dung phía sau vì bản tin có dấu | bên trong nội dung
+            const fullComment = parts.slice(3).join('|').trim(); 
+            const upper = fullComment.toUpperCase();
 
-            const upper = comment.toUpperCase();
-            const tempMatch = comment.match(/([-+]?[0-9]*\.?[0-9]+)\s*°?C?/i);
-            const tempVal = tempMatch ? `${tempMatch[1]} °C` : '';
+            // Trích xuất nhiệt độ (VD: "ZONE_A: 0.0 C" -> lấy "0.0 °C")
+            const tempMatch = fullComment.match(/(?:ZONE_[AB]:\s*)([-+]?[0-9]+(?:\.[0-9]+)?)\s*°?C/i) 
+                           || fullComment.match(/([-+]?[0-9]+(?:\.[0-9]+)?)\s*°?C/i);
+            const tempVal = tempMatch ? `${tempMatch[1]} °C` : '--.- °C';
 
-            if (upper.includes('ZONE A') || upper.includes('ZONE_A')) {
-                result.zoneA.note = comment;
-                result.zoneA.temp = tempVal || 'Đã ghi nhận';
-                result.zoneA.status = upper.includes('FAIL') ? 'FAILED' : 'PASSED';
-            } else if (upper.includes('ZONE B') || upper.includes('ZONE_B')) {
-                result.zoneB.note = comment;
-                result.zoneB.temp = tempVal || 'Đã ghi nhận';
-                result.zoneB.status = upper.includes('FAIL') ? 'FAILED' : 'PASSED';
+            // Trích xuất Duration (VD: "15m18s")
+            const durMatch = fullComment.match(/DURATION:\s*([0-9a-zA-Z]+)/i);
+            const durVal = durMatch ? durMatch[1] : '';
+
+            const statusVal = upper.includes('FAIL') ? 'FAILED' : 'PASSED';
+
+            if (upper.includes('ZONE_A') || upper.includes('ZONE A')) {
+                result.zoneA.temp = tempVal;
+                result.zoneA.status = statusVal;
+                result.zoneA.duration = durVal;
+            } else if (upper.includes('ZONE_B') || upper.includes('ZONE B')) {
+                result.zoneB.temp = tempVal;
+                result.zoneB.status = statusVal;
+                result.zoneB.duration = durVal;
             }
-        } else if (seg === 'OBX') {
-            const seq = parseInt(parts[1], 10);
-            const bagIndex = parseInt(parts[3], 10) || seq;
-            const barcode = parts[5] || '';
-            const status = parts[11] || 'F';
+        } 
+        // 16 Túi Barcode (OBX)
+        else if (seg === 'OBX') {
+            // Format: OBX|1|ST|1||24330B0BD3|||||F
+            const bagIndex = parseInt(parts[3] || parts[1], 10);
+            const barcodeVal = parts[5] || '';
+            const statusVal = (parts[11] === 'F' || parts[11] === 'OK') ? 'PASSED' : (parts[11] || 'PASSED');
 
             if (bagIndex >= 1 && bagIndex <= 16) {
-                result.slots[bagIndex - 1].barcode = barcode;
-                result.slots[bagIndex - 1].status = (status === 'F' || status === 'OK') ? 'Hoàn tất' : status;
+                result.slots[bagIndex - 1].barcode = barcodeVal;
+                result.slots[bagIndex - 1].status = barcodeVal ? statusVal : 'Trống';
             }
         }
     });
