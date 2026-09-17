@@ -65,30 +65,36 @@ document.addEventListener('DOMContentLoaded', () => {
     DeviceService.subscribeDevices((data) => {
         AppState.devices = data;
 
-        // Bắt bản tin HL7 đẩy sang Google Sheets
+        // TỰ ĐỘNG BẮT BẢN TIN HL7 VÀ ĐẨY LÊN SHEET (CHẠY NGẦM)
         Object.keys(data).forEach(deviceId => {
             const history = data[deviceId]?.history;
             if (history) {
                 Object.keys(history).forEach(recordKey => {
                     const rawHL7 = history[recordKey]?.raw_hl7;
                     if (rawHL7) {
-                        AppState.latestHL7ByDevice[deviceId] = { key: recordKey, rawHL7: rawHL7 };
-
-                        if (AppState.selectedDeviceId === deviceId) {
-                            UIRenderer.displayHL7Detail(rawHL7, recordKey);
-                        }
-
-                        console.log(`🚀 Bản ghi mới [${recordKey}] từ [${deviceId}], đẩy sang Sheet...`);
+                        console.log(`🚀 Bắt được bản ghi [${recordKey}], đang xử lý...`);
                         DeviceService.processAndForwardHL7(deviceId, recordKey, rawHL7).then(() => {
                             const iframe = document.getElementById('google-sheet-iframe');
-                            if (iframe) {
-                                iframe.src = iframe.src;
-                            }
+                            if (iframe) iframe.src = iframe.src;
                         });
                     }
                 });
             }
         });
+
+        // Cập nhật giao diện danh sách
+        if (document.getElementById('device-selection-page').classList.contains('active')) {
+            const query = document.getElementById('search-input').value;
+            UIRenderer.renderDeviceList(AppState.devices, query, selectDevice);
+        }
+
+        // Cập nhật thông số máy
+        if (AppState.selectedDeviceId && AppState.devices[AppState.selectedDeviceId]) {
+            const currentDev = AppState.devices[AppState.selectedDeviceId];
+            UIRenderer.updateDeviceDetails(currentDev);
+            // Cập nhật danh sách wifi nếu có...
+        }
+    });
 
         if (document.getElementById('device-selection-page').classList.contains('active')) {
             const query = document.getElementById('search-input').value;
