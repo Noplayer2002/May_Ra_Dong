@@ -30,11 +30,13 @@ export const UIRenderer = {
 
     // js/ui/uiRenderer.js
 
+    // js/ui/uiRenderer.js
+
     renderWifiList(wifiList, onSelectSSID) {
         const listEl = document.getElementById('scanned-wifi-list');
         if (!listEl) return;
 
-        // 1. TỰ ĐỘNG CHUẨN HÓA: Dù Firebase trả về Object hay Array đều biến thành Mảng chuẩn
+        // Chuẩn hóa Object / Array thành mảng chuẩn
         let list = [];
         if (Array.isArray(wifiList)) {
             list = wifiList.filter(Boolean);
@@ -42,17 +44,16 @@ export const UIRenderer = {
             list = Object.values(wifiList).filter(Boolean);
         }
 
-        // Nếu không có mạng nào
+        // Thông báo khi không có Wi-Fi (Chữ trắng mờ dễ đọc)
         if (list.length === 0) {
-            listEl.innerHTML = '<div style="color:#64748b; font-size:13px; text-align:center; padding:15px;">Không tìm thấy mạng Wi-Fi nào.</div>';
+            listEl.innerHTML = '<div style="color:#cbd5e1; font-size:13px; text-align:center; padding:15px;">Không tìm thấy mạng Wi-Fi nào.</div>';
             return;
         }
 
-        console.log(`📶 Đã nhận được ${list.length} mạng Wi-Fi từ Firebase:`, list);
+        console.log(`📶 Đã nhận ${list.length} mạng Wi-Fi:`, list);
 
-        // 2. RENDER GIAO DIỆN
+        // Render danh sách với CHỮ TRẮNG NỔI BẬT TRÊN NỀN ĐEN
         listEl.innerHTML = list.map(item => {
-            // Hỗ trợ cả trường hợp ESP32 gửi chuỗi đơn "Ten_Wifi" hoặc object {ssid, rssi} / {SSID, RSSI}
             let ssid = '';
             let rssi = -75;
 
@@ -63,33 +64,32 @@ export const UIRenderer = {
                 rssi = item.rssi !== undefined ? Number(item.rssi) : (item.RSSI !== undefined ? Number(item.RSSI) : -75);
             }
 
-            // Bỏ qua nếu không có tên Wi-Fi
             if (!ssid || ssid.trim() === '') return '';
 
-            // Xác định màu tín hiệu sóng
             let dotColor = rssi >= -65 ? '#22c55e' : (rssi >= -75 ? '#eab308' : '#ef4444');
 
             return `
-                <div class="wifi-item" data-ssid="${ssid}" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid #f1f5f9; transition:background 0.2s;">
-                    <div class="wifi-ssid" style="font-weight:500; font-size:13.5px; color:#1e293b;">📶 ${ssid}</div>
+                <div class="wifi-item" data-ssid="${ssid}" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; padding:11px 14px; border-bottom:1px solid rgba(255,255,255,0.12); transition:background 0.2s;">
+                    <!-- TÊN WI-FI MÀU TRẮNG TINH -->
+                    <div class="wifi-ssid" style="font-weight:600; font-size:14px; color:#ffffff; letter-spacing:0.3px;">📶 ${ssid}</div>
+                    
+                    <!-- CHỈ SỐ DBM VÀ CHẤM SÓNG -->
                     <div style="display:flex; align-items:center; gap:8px;">
-                        <span style="font-size:11.5px; color:#94a3b8;">${rssi} dBm</span>
-                        <div style="width:10px; height:10px; border-radius:50%; background-color:${dotColor};" title="Tín hiệu: ${rssi} dBm"></div>
+                        <span style="font-size:12px; color:#94a3b8; font-family:monospace;">${rssi} dBm</span>
+                        <div style="width:10px; height:10px; border-radius:50%; background-color:${dotColor}; box-shadow:0 0 6px ${dotColor};" title="Tín hiệu: ${rssi} dBm"></div>
                     </div>
                 </div>
             `;
         }).filter(Boolean).join('');
 
-        // 3. GẮN SỰ KIỆN CLICK ĐIỀN TỰ ĐỘNG TÊN WI-FI
+        // Gắn sự kiện click và hover trên nền tối
         listEl.querySelectorAll('.wifi-item').forEach(el => {
             el.onclick = () => {
                 const selectedSsid = el.dataset.ssid;
-                if (onSelectSSID) {
-                    onSelectSSID(selectedSsid);
-                }
+                if (onSelectSSID) onSelectSSID(selectedSsid);
             };
-            // Hiệu ứng hover chuột
-            el.onmouseenter = () => el.style.backgroundColor = '#f8fafc';
+            // Khi rê chuột vào: sáng nhẹ lên
+            el.onmouseenter = () => el.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
             el.onmouseleave = () => el.style.backgroundColor = 'transparent';
         });
     },
