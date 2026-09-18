@@ -28,25 +28,69 @@ export const UIRenderer = {
         });
     },
 
+    // js/ui/uiRenderer.js
+
     renderWifiList(wifiList, onSelectSSID) {
         const listEl = document.getElementById('scanned-wifi-list');
-        if (!wifiList || wifiList.length === 0) {
-            listEl.innerHTML = '<div style="color:#64748b; font-size:13px; text-align:center; padding:15px;">Không có dữ liệu.</div>';
+        if (!listEl) return;
+
+        // 1. TỰ ĐỘNG CHUẨN HÓA: Dù Firebase trả về Object hay Array đều biến thành Mảng chuẩn
+        let list = [];
+        if (Array.isArray(wifiList)) {
+            list = wifiList.filter(Boolean);
+        } else if (typeof wifiList === 'object' && wifiList !== null) {
+            list = Object.values(wifiList).filter(Boolean);
+        }
+
+        // Nếu không có mạng nào
+        if (list.length === 0) {
+            listEl.innerHTML = '<div style="color:#64748b; font-size:13px; text-align:center; padding:15px;">Không tìm thấy mạng Wi-Fi nào.</div>';
             return;
         }
 
-        listEl.innerHTML = wifiList.map(w => {
-            let dotClass = w.rssi >= -65 ? 'dot-green' : (w.rssi >= -75 ? 'dot-yellow' : 'dot-red');
+        console.log(`📶 Đã nhận được ${list.length} mạng Wi-Fi từ Firebase:`, list);
+
+        // 2. RENDER GIAO DIỆN
+        listEl.innerHTML = list.map(item => {
+            // Hỗ trợ cả trường hợp ESP32 gửi chuỗi đơn "Ten_Wifi" hoặc object {ssid, rssi} / {SSID, RSSI}
+            let ssid = '';
+            let rssi = -75;
+
+            if (typeof item === 'string') {
+                ssid = item;
+            } else if (typeof item === 'object' && item !== null) {
+                ssid = item.ssid || item.SSID || item.name || '';
+                rssi = item.rssi !== undefined ? Number(item.rssi) : (item.RSSI !== undefined ? Number(item.RSSI) : -75);
+            }
+
+            // Bỏ qua nếu không có tên Wi-Fi
+            if (!ssid || ssid.trim() === '') return '';
+
+            // Xác định màu tín hiệu sóng
+            let dotColor = rssi >= -65 ? '#22c55e' : (rssi >= -75 ? '#eab308' : '#ef4444');
+
             return `
-                <div class="wifi-item" data-ssid="${w.ssid}">
-                    <div class="wifi-ssid">📶 ${w.ssid}</div>
-                    <div class="wifi-dot ${dotClass}" title="Tín hiệu: ${w.rssi} dBm"></div>
+                <div class="wifi-item" data-ssid="${ssid}" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid #f1f5f9; transition:background 0.2s;">
+                    <div class="wifi-ssid" style="font-weight:500; font-size:13.5px; color:#1e293b;">📶 ${ssid}</div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:11.5px; color:#94a3b8;">${rssi} dBm</span>
+                        <div style="width:10px; height:10px; border-radius:50%; background-color:${dotColor};" title="Tín hiệu: ${rssi} dBm"></div>
+                    </div>
                 </div>
             `;
-        }).join('');
+        }).filter(Boolean).join('');
 
+        // 3. GẮN SỰ KIỆN CLICK ĐIỀN TỰ ĐỘNG TÊN WI-FI
         listEl.querySelectorAll('.wifi-item').forEach(el => {
-            el.onclick = () => onSelectSSID(el.dataset.ssid);
+            el.onclick = () => {
+                const selectedSsid = el.dataset.ssid;
+                if (onSelectSSID) {
+                    onSelectSSID(selectedSsid);
+                }
+            };
+            // Hiệu ứng hover chuột
+            el.onmouseenter = () => el.style.backgroundColor = '#f8fafc';
+            el.onmouseleave = () => el.style.backgroundColor = 'transparent';
         });
     },
 
