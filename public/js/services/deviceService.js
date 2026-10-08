@@ -18,7 +18,7 @@ export const DeviceService = {
         setTimeout(async () => {
             try {
                 await scanCmdRef.set(false);
-                console.log(`⏱️ Đã tự động trả cờ scan_wifi về false cho ${deviceId}`);
+                console.log(`Đã tự động trả cờ scan_wifi về false cho ${deviceId}`);
             } catch (err) {
                 console.warn("Lỗi khi reset cờ scan_wifi:", err);
             }
@@ -41,7 +41,7 @@ export const DeviceService = {
         setTimeout(async () => {
             try {
                 await wifiRef.remove();
-                console.log(`🧹 Đã xóa node wifi: esp32/devices/${deviceId}/wifi`);
+                console.log(`Đã xóa node wifi: esp32/devices/${deviceId}/wifi`);
             } catch (err) {
                 console.warn("Lỗi khi xóa node wifi:", err);
             }
@@ -109,7 +109,7 @@ export const DeviceService = {
             slots: slots
         };
 
-        console.log("📦 Dữ liệu gửi đi:", payload);
+        console.log("Dữ liệu gửi đi:", payload);
 
         try {
             await fetch(GOOGLE_SHEET_WEBHOOK_URL, {
@@ -118,9 +118,9 @@ export const DeviceService = {
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify(payload)
             });
-            console.log("✅ Đã gửi bản ghi sang Google Sheets thành công!");
+            console.log("Đã gửi bản ghi sang Google Sheets thành công!");
         } catch (err) {
-            console.error("❌ Lỗi gửi Google Sheet:", err);
+            console.error("Lỗi gửi Google Sheet:", err);
         }
 
         // Tạm thời comment dòng này lại để test, khi nào sheet ghi ngon lành thì mở ra

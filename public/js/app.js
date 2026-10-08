@@ -89,10 +89,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 Object.keys(history).forEach(recordKey => {
                     const rawHL7 = history[recordKey]?.raw_hl7;
                     if (rawHL7) {
-                        console.log(`🚀 Bắt được bản ghi [${recordKey}] từ máy [${deviceId}], đang gửi lên Google Sheets...`);
+                        console.log(`Bắt được bản ghi [${recordKey}] từ máy [${deviceId}], đang gửi lên Google Sheets...`);
                         
                         DeviceService.processAndForwardHL7(deviceId, recordKey, rawHL7).then(() => {
-                            console.log(`✨ Chu trình hoàn tất: Đã đẩy lên Sheet & Đã tự động xóa [${recordKey}] trên Firebase.`);
+                            console.log(`Chu trình hoàn tất: Đã đẩy lên Sheet & Đã tự động xóa [${recordKey}] trên Firebase.`);
                             
                             // Chờ 2.5s rồi làm mới bảng tính
                             setTimeout(() => {
@@ -138,10 +138,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnRefreshSheet = document.getElementById('btn-refresh-sheet');
     if (btnRefreshSheet) {
         btnRefreshSheet.onclick = () => {
-            btnRefreshSheet.textContent = "⏳ Đang tải...";
+            btnRefreshSheet.textContent = "Đang tải...";
             refreshSheetIframe();
             setTimeout(() => {
-                btnRefreshSheet.textContent = "🔄 Tải lại dữ liệu";
+                btnRefreshSheet.textContent = "Tải lại dữ liệu";
             }, 1200);
         };
     }
@@ -150,10 +150,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const pingBtn = document.getElementById('btn-check-device-status');
     pingBtn.onclick = async () => {
         pingBtn.disabled = true;
-        pingBtn.textContent = "⏳ Đang phát sóng...";
+        pingBtn.textContent = "Đang phát sóng...";
         await DeviceService.broadcastPing();
         pingBtn.disabled = false;
-        pingBtn.textContent = "⚡ Quét Trạng Thái (Global Ping)";
+        pingBtn.textContent = "Quét Trạng Thái (Global Ping)";
     };
 
     // 6. QUÉT WI-FI XUNG QUANH
@@ -163,23 +163,23 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!devId) return;
 
         scanWifiBtn.disabled = true;
-        scanWifiBtn.textContent = "⏳ Đang quét Wi-Fi (10s)...";
+        scanWifiBtn.textContent = "Đang quét Wi-Fi (10s)...";
 
         const wifiBox = document.getElementById('scanned-wifi-list');
         if (wifiBox) {
-            wifiBox.innerHTML = '<div style="color:#1976d2; font-size:13px; text-align:center; padding:15px;">⏳ Đang yêu cầu ESP32 quét các mạng xung quanh...</div>';
+            wifiBox.innerHTML = '<div style="color:#1976d2; font-size:13px; text-align:center; padding:15px;">Đang yêu cầu ESP32 quét các mạng xung quanh...</div>';
         }
 
         await DeviceService.triggerScanWifi(devId);
 
         setTimeout(() => {
             scanWifiBtn.disabled = false;
-            scanWifiBtn.textContent = "🔍 Quét Wi-Fi Xung Quanh";
+            scanWifiBtn.textContent = "Quét Wi-Fi Xung Quanh";
 
             const currentDev = AppState.devices[devId];
             if (!currentDev?.wifi_list || currentDev.wifi_list.length === 0) {
                 if (wifiBox) {
-                    wifiBox.innerHTML = '<div style="color:#d32f2f; font-size:13px; text-align:center; padding:15px;">⚠️ Hết 10s: Không nhận được phản hồi từ thiết bị hoặc không có mạng Wi-Fi nào.</div>';
+                    wifiBox.innerHTML = '<div style="color:#d32f2f; font-size:13px; text-align:center; padding:15px;">Hết 10s: Không nhận được phản hồi từ thiết bị hoặc không có mạng Wi-Fi nào.</div>';
                 }
             }
         }, 10000);
@@ -196,17 +196,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const btnSubmit = e.target.querySelector('button[type="submit"]');
         btnSubmit.disabled = true;
-        btnSubmit.textContent = "⏳ Đang cấu hình...";
+        btnSubmit.textContent = "Đang cấu hình...";
 
         try {
             await DeviceService.saveWifi(devId, ssid, pass);
             document.getElementById('wifi-pass').value = '';
-            alert("✅ Đã gửi lệnh lưu Wi-Fi!\n🔒 Mật khẩu sẽ tự động biến mất sau 10 giây.");
+            alert("Đã gửi lệnh lưu Wi-Fi!\nMật khẩu sẽ tự động biến mất sau 10 giây.");
         } catch (err) {
-            alert("❌ Lỗi: " + err.message);
+            alert("Lỗi: " + err.message);
         } finally {
             btnSubmit.disabled = false;
-            btnSubmit.textContent = "💾 Lưu & Đổi Mạng Cho Máy";
+            btnSubmit.textContent = "Lưu & Đổi Mạng Cho Máy";
         }
     };
 
@@ -225,12 +225,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!isNaN(newPort) && newPort !== currentTcp.server_port) diffTcp.server_port = newPort;
 
         if (Object.keys(diffTcp).length === 0) {
-            alert("ℹ️ Không có thông số TCP nào thay đổi!");
+            alert("Không có thông số TCP nào thay đổi!");
             return;
         }
 
         await DeviceService.updateTcp(devId, diffTcp);
-        alert(`✅ Đã cập nhật TCP: ${Object.keys(diffTcp).join(', ')}`);
+        alert(`Đã cập nhật TCP: ${Object.keys(diffTcp).join(', ')}`);
     };
 
     // 9. LƯU CẤU HÌNH NHIỆT ĐỘ & PID (PLASMA THAWER)
@@ -262,15 +262,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const changedKeys = Object.keys(diffPayload);
         if (changedKeys.length === 0) {
-            alert("ℹ️ Không có thông số nào thay đổi, không cần lưu!");
+            alert("Không có thông số nào thay đổi, không cần lưu!");
             return;
         }
 
         try {
             await DeviceService.updatePlasma(devId, diffPayload);
-            alert(`✅ Đã cập nhật thành công ${changedKeys.length} thông số!`);
+            alert(`Đã cập nhật thành công ${changedKeys.length} thông số!`);
         } catch (err) {
-            alert("❌ Lỗi khi gửi cấu hình xuống thiết bị!");
+            alert("Lỗi khi gửi cấu hình xuống thiết bị!");
         }
     };
 });

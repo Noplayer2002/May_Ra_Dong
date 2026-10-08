@@ -50,7 +50,7 @@ export const UIRenderer = {
             return;
         }
 
-        console.log(`📶 Đã nhận ${list.length} mạng Wi-Fi:`, list);
+        console.log(`Đã nhận ${list.length} mạng Wi-Fi:`, list);
 
         // Render danh sách với CHỮ TRẮNG NỔI BẬT TRÊN NỀN ĐEN
         listEl.innerHTML = list.map(item => {
@@ -71,7 +71,7 @@ export const UIRenderer = {
             return `
                 <div class="wifi-item" data-ssid="${ssid}" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; padding:11px 14px; border-bottom:1px solid rgba(255,255,255,0.12); transition:background 0.2s;">
                     <!-- TÊN WI-FI MÀU TRẮNG TINH -->
-                    <div class="wifi-ssid" style="font-weight:600; font-size:14px; color:#ffffff; letter-spacing:0.3px;">📶 ${ssid}</div>
+                    <div class="wifi-ssid" style="font-weight:600; font-size:14px; color:#ffffff; letter-spacing:0.3px;">${ssid}</div>
                     
                     <!-- CHỈ SỐ DBM VÀ CHẤM SÓNG -->
                     <div style="display:flex; align-items:center; gap:8px;">
@@ -198,7 +198,7 @@ export const UIRenderer = {
                         </td>
                         <td style="padding:8px;">
                             ${hasBarcode 
-                                ? `<span style="font-family:monospace; font-weight:bold; color:#0369a1; font-size:13.5px;">🏷️ ${item.barcode}</span>` 
+                                ? `<span style="font-family:monospace; font-weight:bold; color:#0369a1; font-size:13.5px;">${item.barcode}</span>`
                                 : `<span style="color:#94a3b8; font-style:italic;">(Vị trí trống)</span>`
                             }
                         </td>
