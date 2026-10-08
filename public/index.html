@@ -12,12 +12,12 @@
 <body>
     <!-- MÀN HÌNH CHỌN THIẾT BỊ -->
     <div id="device-selection-page" class="page active">
-        <div class="top-bar">⚙️ Quản lý thiết bị rã đông</div>
+        <div class="top-bar">Quản lý thiết bị rã đông</div>
         <div class="container" style="max-width: 650px;">
-            <input type="text" id="search-input" class="search-box" placeholder="🔍 Tìm kiếm mã máy hoặc MAC...">
+            <input type="text" id="search-input" class="search-box" placeholder="Tìm kiếm mã máy hoặc MAC...">
             <div id="devices-list" class="list-container"></div>
             <div style="margin-top: 20px;">
-                <button class="btn btn-orange" id="btn-check-device-status">⚡ Quét Trạng Thái (Global Ping)</button>
+                <button class="btn btn-orange" id="btn-check-device-status">Quét Trạng Thái (Global Ping)</button>
             </div>
         </div>
     </div>
@@ -25,7 +25,7 @@
     <!-- MÀN HÌNH CHI TIẾT THIẾT BỊ -->
     <div id="settings-page" class="page">
         <div class="top-bar">
-            <span>⚙️ Thiết bị: <span id="selected-device-name" style="color: var(--primary);">ESP32</span></span>
+            <span>Thiết bị: <span id="selected-device-name" style="color: var(--primary);">ESP32</span></span>
             <button class="btn-secondary" id="btn-back">← Quay lại danh sách</button>
         </div>
         
@@ -34,13 +34,13 @@
             <a data-tab="tcp">TCP Server</a>
             <a data-tab="config">Thông số máy</a>
             <a data-tab="plasma">Plasma Thawer</a>
-            <a data-tab="records">📑 Nhật ký bản ghi (HL7)</a>
+            <a data-tab="records">Nhật ký bản ghi (HL7)</a>
         </div>
 
         <div class="container">
             <!-- TAB 1: WI-FI -->
             <div id="wifi" class="tab-content active">
-                <button type="button" class="btn btn-blue" id="btn-scan-wifi" style="margin-bottom:15px;">🔍 Quét Wi-Fi Xung Quanh</button>
+                <button type="button" class="btn btn-blue" id="btn-scan-wifi" style="margin-bottom:15px;">Quét Wi-Fi Xung Quanh</button>
                 <div class="label">Mạng Wi-Fi tìm thấy (Click để chọn):</div>
                 <div id="scanned-wifi-list" class="wifi-list-box"></div>
 
@@ -53,7 +53,7 @@
                         <div class="label">Mật khẩu Wi-Fi</div>
                         <input type="password" id="wifi-pass" placeholder="Nhập mật khẩu (tự xóa sau khi gửi)">
                     </div>
-                    <button type="submit" class="btn">💾 Lưu & Đổi Mạng Cho Máy</button>
+                    <button type="submit" class="btn">Lưu & Đổi Mạng Cho Máy</button>
                 </form>
             </div>
 
@@ -62,18 +62,18 @@
                 <form id="tcp-form">
                     <div class="row"><div class="label">Server IP (Máy chủ LIS)</div><input type="text" id="server_ip" required></div>
                     <div class="row"><div class="label">Server Port</div><input type="number" id="server_port" required></div>
-                    <button type="submit" class="btn">💾 Lưu Cấu Hình TCP</button>
+                    <button type="submit" class="btn">Lưu Cấu Hình TCP</button>
                 </form>
             </div>
             
             <!-- TAB 3: THÔNG SỐ MÁY -->
             <div id="config" class="tab-content">
-                <div class="info-item"><span class="info-label">📡 Trạng thái:</span><span class="info-value" id="network-status">...</span></div>
-                <div class="info-item"><span class="info-label">⚙️ Máy trạng thái (FSM):</span><span class="info-value" id="lpc-fsm">N/A</span></div>
-                <div class="info-item"><span class="info-label">🚨 Mã lỗi bo mạch (ERR):</span><span class="info-value" id="lpc-err">0x0000</span></div>
-                <div class="info-item"><span class="info-label">🌐 Địa chỉ IP:</span><span class="info-value" id="ip-address">N/A</span></div>
-                <div class="info-item"><span class="info-label">🔗 Địa chỉ MAC:</span><span class="info-value" id="mac-address">N/A</span></div>
-                <div class="info-item"><span class="info-label">🔋 Pin dự phòng:</span><span class="info-value" id="battery-level">N/A</span></div>
+                <div class="info-item"><span class="info-label">Trạng thái:</span><span class="info-value" id="network-status">...</span></div>
+                <div class="info-item"><span class="info-label">Máy trạng thái (FSM):</span><span class="info-value" id="lpc-fsm">N/A</span></div>
+                <div class="info-item"><span class="info-label">Mã lỗi bo mạch (ERR):</span><span class="info-value" id="lpc-err">0x0000</span></div>
+                <div class="info-item"><span class="info-label">Địa chỉ IP:</span><span class="info-value" id="ip-address">N/A</span></div>
+                <div class="info-item"><span class="info-label">Địa chỉ MAC:</span><span class="info-value" id="mac-address">N/A</span></div>
+                <div class="info-item"><span class="info-label">Pin dự phòng:</span><span class="info-value" id="battery-level">N/A</span></div>
             </div>
 
             <!-- TAB 4: CẤU HÌNH NHIỆT ĐỘ & PID -->
@@ -103,7 +103,7 @@
                     <div class="row"><div class="label">Ti (Thời gian tích phân)</div><input type="number" step="any" id="pid_ti" required></div>
                     <div class="row"><div class="label">Td (Thời gian vi phân)</div><input type="number" step="any" id="pid_td" required></div>
 
-                    <button type="submit" class="btn btn-orange" style="margin-top: 15px;">💾 Lưu Cấu Hình Plasma</button>
+                    <button type="submit" class="btn btn-orange" style="margin-top: 15px;">Lưu Cấu Hình Plasma</button>
                 </form>
             </div>
             <!-- TAB 5: BẢNG GOOGLE SHEETS DASHBOARD -->
@@ -115,12 +115,12 @@
                             <span>Đồng Bộ Google Sheets Trực Tiếp</span>
                         </div>
                         <div style="display: flex; gap: 8px;">
-                            <button type="button" class="btn-secondary" id="btn-refresh-sheet">🔄 Tải lại dữ liệu</button>
+                            <button type="button" class="btn-secondary" id="btn-refresh-sheet">Tải lại dữ liệu</button>
                             <a href="https://docs.google.com/spreadsheets/d/1jaLfUghym0DGokRXKbHBB35qx9IXLwIW4DnyRnJkThg/edit?gid=0#gid=0" 
                                target="_blank" 
                                class="btn-secondary" 
                                style="background: #0284c7; color: #fff; border-color: #0284c7;">
-                                ↗️ Xem trên Google Sheets
+                                Xem trên Google Sheets
                             </a>
                         </div>
                     </div>
