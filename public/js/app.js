@@ -113,8 +113,6 @@ function selectDevice(id) {
     // Hiển thị bản ghi HL7 gần nhất nếu có
     if (AppState.lastHL7[id]) {
         UIRenderer.displayHL7Detail(AppState.lastHL7[id].rawHL7, AppState.lastHL7[id].recordKey);
-    } else if (device?.last_completed_record?.raw_hl7) {
-        UIRenderer.displayHL7Detail(device.last_completed_record.raw_hl7, 'completed', 'Mẻ gần nhất');
     } else if (device?.history) {
         const historyKeys = Object.keys(device.history);
         if (historyKeys.length > 0) {

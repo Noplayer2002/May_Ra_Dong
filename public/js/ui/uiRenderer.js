@@ -184,15 +184,15 @@ export const UIRenderer = {
                 const rowBg = item.slot % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent';
                 return `
                     <tr style="background:${rowBg}; border-bottom:1px solid rgba(255,255,255,0.04);">
-                        <td style="text-align:center; font-weight:700; color:#94a3b8; padding:5px 6px;">#${String(item.slot).padStart(2, '0')}</td>
-                        <td style="padding:5px 8px;">
+                        <td style="text-align:center; font-weight:700; color:#94a3b8; padding:3px 6px; font-size:11.5px;">#${String(item.slot).padStart(2, '0')}</td>
+                        <td style="padding:3px 8px;">
                             ${hasBarcode 
-                                ? `<span style="font-family:monospace; font-weight:700; color:#38bdf8; font-size:12.5px;">${item.barcode}</span>`
-                                : `<span style="color:#64748b; font-style:italic; font-size:12px;">(Vị trí trống)</span>`
+                                ? `<span style="font-family:monospace; font-weight:700; color:#38bdf8; font-size:12px;">${item.barcode}</span>`
+                                : `<span style="color:#64748b; font-style:italic; font-size:11.5px;">(Trống)</span>`
                             }
                         </td>
-                        <td style="text-align:center; padding:5px 6px;">
-                            <span style="font-weight:600; font-size:11.5px; color:${hasBarcode ? '#10b981' : '#475569'};">
+                        <td style="text-align:center; padding:3px 6px;">
+                            <span style="font-weight:600; font-size:11px; color:${hasBarcode ? '#10b981' : '#475569'};">
                                 ${hasBarcode ? 'Đạt' : '---'}
                             </span>
                         </td>

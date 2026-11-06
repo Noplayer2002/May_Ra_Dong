@@ -125,16 +125,6 @@ export const DeviceService = {
             console.error("Lỗi gửi Google Sheet:", err);
         }
 
-        // Lưu mẻ gần nhất vào last_completed_record trên Firebase để F5 không bị mất
-        try {
-            await db.ref(`esp32/devices/${deviceId}/last_completed_record`).set({
-                raw_hl7: rawHL7Text,
-                batchId: pid.batchId || '',
-                timestamp: Date.now()
-            });
-        } catch (e) {
-            console.warn("Không thể lưu last_completed_record:", e);
-        }
 
         // Xóa bản ghi trong hàng đợi history trên Firebase để tránh gửi lặp lại
         await db.ref(`esp32/devices/${deviceId}/history/${recordKey}`).remove();
