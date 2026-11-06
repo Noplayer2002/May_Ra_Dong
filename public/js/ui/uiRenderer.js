@@ -121,15 +121,6 @@ export const UIRenderer = {
         const macEl = document.getElementById('mac-address');
         if (macEl) macEl.textContent = info.mac || 'N/A';
 
-        let batteryText = 'N/A';
-        if (info.pin !== undefined && info.pin !== null) {
-            let raw = parseFloat(info.pin);
-            let voltage = (raw > 50.0) ? (raw / 100.0) : raw;
-            batteryText = `${getBatteryPercentage(voltage)}% (${voltage.toFixed(2)} V)`;
-        }
-        const batEl = document.getElementById('battery-level');
-        if (batEl) batEl.textContent = batteryText;
-
         if (document.activeElement !== document.getElementById('ssid')) {
             const el = document.getElementById('ssid');
             if (el) el.value = info.ssid || '';
@@ -155,64 +146,114 @@ export const UIRenderer = {
         });
     },
 
-    displayHL7Detail(rawString, key) {
-        if (!rawString) return;
-        const data = parseHL7String(rawString);
-        if (!data) return;
-
-        const { msh, pid, slots, zoneA, zoneB } = data.parsed;
+    displayBatchData(batchData, rawContent = '', sourceLabel = 'Bản ghi mới nhất') {
+        if (!batchData) return;
 
         const setTxt = (id, val) => {
             const el = document.getElementById(id);
             if (el) el.textContent = val;
         };
 
-        setTxt('hl7-batch-id', pid.batchId || 'N/A');
-        setTxt('hl7-msg-id', msh.msgId || key || 'N/A');
-        setTxt('hl7-sender', `${msh.sender || 'N/A'} (${msh.facility || 'N/A'})`);
-        const formattedDate = formatHL7Date(msh.timestamp);
-        setTxt('hl7-timestamp', formattedDate);
-        setTxt('hl7-timestamp-badge', `Bản ghi: ${formattedDate}`);
+        const batchId = batchData.pid?.batchId || batchData.batchId || 'N/A';
+        const msgId = batchData.msh?.msgId || batchData.msgId || 'N/A';
+        const sender = batchData.msh?.sender || batchData.deviceId || 'THAWER_16';
+        const timeRaw = batchData.msh?.timestamp || batchData.hl7Time || '';
+        const timeFormatted = timeRaw.length === 14 ? formatHL7Date(timeRaw) : (timeRaw || 'N/A');
 
-        setTxt('zone-a-temp', zoneA.temp || '--.- °C');
-        setTxt('zone-a-status', zoneA.status || 'PASSED');
-        setTxt('zone-a-note', zoneA.note || 'Hoàn tất rã đông Zone A');
+        setTxt('hl7-batch-id', batchId);
+        setTxt('hl7-msg-id', msgId);
+        setTxt('hl7-sender', sender);
+        setTxt('hl7-timestamp', timeFormatted);
+        setTxt('hl7-timestamp-badge', `Bản ghi: ${timeFormatted}`);
 
-        setTxt('zone-b-temp', zoneB.temp || '--.- °C');
-        setTxt('zone-b-status', zoneB.status || 'PASSED');
-        setTxt('zone-b-note', zoneB.note || 'Hoàn tất rã đông Zone B');
+        const tagEl = document.getElementById('hl7-source-tag');
+        if (tagEl) tagEl.textContent = sourceLabel;
 
-        const tbody = document.getElementById('hl7-16-slots-body');
-        if (tbody) {
-            tbody.innerHTML = slots.map(item => {
-                const isZoneA = item.zone === 'A';
-                const hasBarcode = Boolean(item.barcode && item.barcode.trim() !== '');
-                const rowBg = item.slot % 2 === 0 ? '#f8fafc' : '#ffffff';
-                const zoneStyle = isZoneA ? 'background:#e0f2fe; color:#0369a1;' : 'background:#ffedd5; color:#c2410c;';
+        const tempA = batchData.zoneA?.temp || batchData.tempZoneA || '--.- °C';
+        const tempB = batchData.zoneB?.temp || batchData.tempZoneB || '--.- °C';
+        setTxt('zone-a-temp', tempA);
+        setTxt('zone-a-status', 'Đạt');
+        setTxt('zone-b-temp', tempB);
+        setTxt('zone-b-status', 'Đạt');
 
+        const slots = batchData.slots || Array.from({ length: 16 }, (_, i) => ({ slot: i + 1, barcode: '' }));
+
+        const renderSlotRows = (slotList) => {
+            return slotList.map(item => {
+                const hasBarcode = Boolean(item.barcode && String(item.barcode).trim() !== '');
+                const rowBg = item.slot % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent';
                 return `
-                    <tr style="background:${rowBg}; border-bottom:1px solid #f1f5f9;">
-                        <td style="text-align:center; font-weight:bold; color:#475569; padding:8px;">#${String(item.slot).padStart(2, '0')}</td>
-                        <td style="text-align:center; padding:8px;">
-                            <span style="padding:3px 8px; border-radius:6px; font-weight:bold; font-size:11px; ${zoneStyle}">Zone ${item.zone}</span>
-                        </td>
-                        <td style="padding:8px;">
+                    <tr style="background:${rowBg}; border-bottom:1px solid rgba(255,255,255,0.04);">
+                        <td style="text-align:center; font-weight:700; color:#94a3b8; padding:5px 6px;">#${String(item.slot).padStart(2, '0')}</td>
+                        <td style="padding:5px 8px;">
                             ${hasBarcode 
-                                ? `<span style="font-family:monospace; font-weight:bold; color:#0369a1; font-size:13.5px;">${item.barcode}</span>`
-                                : `<span style="color:#94a3b8; font-style:italic;">(Vị trí trống)</span>`
+                                ? `<span style="font-family:monospace; font-weight:700; color:#38bdf8; font-size:12.5px;">${item.barcode}</span>`
+                                : `<span style="color:#64748b; font-style:italic; font-size:12px;">(Vị trí trống)</span>`
                             }
                         </td>
-                        <td style="text-align:center; padding:8px;">
-                            <span style="font-weight:600; font-size:12px; color:${hasBarcode ? '#16a34a' : '#94a3b8'};">
-                                ${hasBarcode ? item.status : '---'}
+                        <td style="text-align:center; padding:5px 6px;">
+                            <span style="font-weight:600; font-size:11.5px; color:${hasBarcode ? '#10b981' : '#475569'};">
+                                ${hasBarcode ? 'Đạt' : '---'}
                             </span>
                         </td>
                     </tr>
                 `;
             }).join('');
-        }
+        };
+
+        const zoneASlots = slots.slice(0, 8);
+        const zoneBSlots = slots.slice(8, 16);
+
+        const tbodyA = document.getElementById('hl7-zone-a-slots-body');
+        if (tbodyA) tbodyA.innerHTML = renderSlotRows(zoneASlots);
+
+        const tbodyB = document.getElementById('hl7-zone-b-slots-body');
+        if (tbodyB) tbodyB.innerHTML = renderSlotRows(zoneBSlots);
 
         const rawEl = document.getElementById('hl7-raw-content');
-        if (rawEl) rawEl.textContent = data.raw;
+        if (rawEl) rawEl.textContent = rawContent || JSON.stringify(batchData, null, 2);
+    },
+
+    displayHL7Detail(rawString, key, sourceLabel = 'Bản ghi mới nhất') {
+        if (!rawString) return;
+        const data = parseHL7String(rawString);
+        if (!data) return;
+        this.displayBatchData(data.parsed, data.raw, sourceLabel);
+    },
+
+    renderHistoryList(batches, selectedBatchId, onSelectBatch) {
+        const container = document.getElementById('hl7-history-list');
+        if (!container) return;
+
+        if (!Array.isArray(batches) || batches.length === 0) {
+            container.innerHTML = '<div class="history-empty">Chưa có mẻ rã đông nào trong sổ nhật ký.</div>';
+            return;
+        }
+
+        container.innerHTML = batches.map(b => {
+            const isSelected = b.batchId === selectedBatchId || b.msgId === selectedBatchId;
+            const validBags = (b.slots || []).filter(s => s && s.barcode && String(s.barcode).trim() !== '').length;
+            const bagText = b.bagCount !== undefined ? `${b.bagCount}/16 túi` : `${validBags}/16 túi`;
+
+            return `
+                <div class="history-item ${isSelected ? 'active' : ''}" data-batch-id="${b.batchId || b.msgId}">
+                    <div class="history-item-top">
+                        <span class="history-batch-id">🏷️ ${b.batchId || 'Không tên'}</span>
+                        <span class="history-time">${b.hl7Time || ''}</span>
+                    </div>
+                    <div class="history-item-bottom">
+                        <span class="history-temps">❄️ A: ${b.tempZoneA || '--'} | B: ${b.tempZoneB || '--'}</span>
+                        <span class="history-bag-count">${bagText}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        container.querySelectorAll('.history-item').forEach((itemEl, idx) => {
+            itemEl.onclick = () => {
+                const batch = batches[idx];
+                if (onSelectBatch) onSelectBatch(batch);
+            };
+        });
     }
 };

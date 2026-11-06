@@ -2,6 +2,7 @@ import { db } from '../config/firebase.js';
 import { parseHL7String } from '../parsers/hl7Parser.js';
 
 const GOOGLE_SHEET_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwnjxvLfXqW4ql9yDpvSmr05VHzikT5aljv9zUjTTtmQXyRqt7cQYPJuTSXWYXSXKqz/exec";
+export const GOOGLE_SHEET_SECRET_TOKEN = "MayRaDong_Secure_Token_2026_xyz";
 
 export const DeviceService = {
     subscribeDevices(callback) {
@@ -100,6 +101,7 @@ export const DeviceService = {
         const { msh, pid, slots, zoneA, zoneB } = parsedData;
 
         const payload = {
+            token: GOOGLE_SHEET_SECRET_TOKEN,
             hl7Time: msh.timestamp || '',
             deviceId: deviceId || msh.sender || 'THAWER_16',
             msgId: msh.msgId || recordKey || '',
@@ -109,7 +111,7 @@ export const DeviceService = {
             slots: slots
         };
 
-        console.log("Dữ liệu gửi đi:", payload);
+        console.log("Dữ liệu gửi sang Google Sheets:", payload);
 
         try {
             await fetch(GOOGLE_SHEET_WEBHOOK_URL, {
@@ -123,7 +125,18 @@ export const DeviceService = {
             console.error("Lỗi gửi Google Sheet:", err);
         }
 
-        // Tạm thời comment dòng này lại để test, khi nào sheet ghi ngon lành thì mở ra
+        // Lưu mẻ gần nhất vào last_completed_record trên Firebase để F5 không bị mất
+        try {
+            await db.ref(`esp32/devices/${deviceId}/last_completed_record`).set({
+                raw_hl7: rawHL7Text,
+                batchId: pid.batchId || '',
+                timestamp: Date.now()
+            });
+        } catch (e) {
+            console.warn("Không thể lưu last_completed_record:", e);
+        }
+
+        // Xóa bản ghi trong hàng đợi history trên Firebase để tránh gửi lặp lại
         await db.ref(`esp32/devices/${deviceId}/history/${recordKey}`).remove();
 
         return true;
@@ -131,5 +144,131 @@ export const DeviceService = {
 
     clearAllHistory(deviceId) {
         return db.ref(`esp32/devices/${deviceId}/history`).remove();
+    },
+
+    async fetchHistoryFromSheet() {
+        const SHEET_ID = "1jaLfUghym0DGokRXKbHBB35qx9IXLwIW4DnyRnJkThg";
+        const csvUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&_t=${Date.now()}`;
+        
+        // 1. Thử đọc trực tiếp qua CSV Export (Nhanh, hỗ trợ CORS gốc, không cần Apps Script)
+        try {
+            const res = await fetch(csvUrl, { method: 'GET' });
+            if (res.ok) {
+                const text = await res.text();
+                const batches = parseGoogleSheetCSV(text);
+                if (batches && batches.length > 0) {
+                    return batches;
+                }
+            }
+        } catch (csvErr) {
+            console.warn("Lỗi đọc Google Sheet CSV, thử qua Webhook Apps Script:", csvErr);
+        }
+
+        // 2. Dự phòng: Đọc qua Webhook Apps Script nếu có action=getHistory
+        const apiUrl = `${GOOGLE_SHEET_WEBHOOK_URL}?action=getHistory&token=${encodeURIComponent(GOOGLE_SHEET_SECRET_TOKEN)}&_t=${Date.now()}`;
+        try {
+            const res = await fetch(apiUrl, { method: 'GET' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            if (data.status === 'SUCCESS' && Array.isArray(data.batches)) {
+                return data.batches;
+            }
+        } catch (apiErr) {
+            console.warn("Không thể tải lịch sử từ Google Sheets API:", apiErr);
+        }
+
+        return null;
     }
 };
+
+function parseCSVLine(line) {
+    const values = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+            if (inQuotes && line[i + 1] === '"') {
+                current += '"';
+                i++;
+            } else {
+                inQuotes = !inQuotes;
+            }
+        } else if (char === ',' && !inQuotes) {
+            values.push(current.trim());
+            current = '';
+        } else {
+            current += char;
+        }
+    }
+    values.push(current.trim());
+    return values;
+}
+
+export function parseGoogleSheetCSV(text) {
+    if (!text) return [];
+    const lines = text.trim().split(/\r?\n/);
+    if (lines.length < 2) return [];
+
+    const batchesMap = new Map();
+
+    for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        const cols = parseCSVLine(line);
+        if (cols.length < 7) continue;
+
+        const hl7Time = (cols[0] || '').trim();
+        const deviceId = (cols[1] || '').trim();
+        const msgId = (cols[2] || '').trim();
+        const batchId = (cols[3] || '').trim();
+        const zone = (cols[4] || '').trim();
+        const temp = (cols[5] || '').trim();
+        const barcodeRaw = (cols[6] || '').replace(/^['"]|['"]$/g, '').trim();
+        const barcode = (barcodeRaw === 'NO_BARCODE' ? '' : barcodeRaw);
+
+        if (!batchId || batchId === 'TEST_BATCH') continue;
+
+        const key = `${batchId}___${msgId || hl7Time}`;
+        if (!batchesMap.has(key)) {
+            batchesMap.set(key, {
+                batchId,
+                msgId,
+                deviceId,
+                hl7Time,
+                tempZoneA: zone === 'Zone A' ? temp : '',
+                tempZoneB: zone === 'Zone B' ? temp : '',
+                slots: []
+            });
+        }
+
+        const b = batchesMap.get(key);
+        if (zone === 'Zone A' && temp && (!b.tempZoneA || b.tempZoneA === '0.0 °C')) b.tempZoneA = temp;
+        if (zone === 'Zone B' && temp && (!b.tempZoneB || b.tempZoneB === '0.0 °C')) b.tempZoneB = temp;
+
+        b.slots.push({
+            slot: (b.slots.length % 16) + 1,
+            barcode,
+            zone,
+            temp
+        });
+    }
+
+    const batches = Array.from(batchesMap.values()).reverse().map(b => {
+        if (b.slots.length > 16) {
+            b.slots = b.slots.slice(-16).map((s, idx) => ({ ...s, slot: idx + 1 }));
+        }
+        while (b.slots.length < 16) {
+            const nextSlot = b.slots.length + 1;
+            b.slots.push({
+                slot: nextSlot,
+                barcode: '',
+                zone: nextSlot <= 8 ? 'Zone A' : 'Zone B',
+                temp: nextSlot <= 8 ? b.tempZoneA : b.tempZoneB
+            });
+        }
+        return b;
+    });
+
+    return batches;
+}

@@ -1,0 +1,83 @@
+{
+  "rules": {
+    "esp32": {
+      "global_command": {
+        ".read": true,
+        ".write": true
+      },
+      "devices": {
+        ".read": true,
+        "$deviceId": {
+          ".write": true,
+          "plasma": {
+            "sp_t_operator": {
+              ".validate": "newData.isNumber() && newData.val() >= 35.0 && newData.val() <= 37.5"
+            },
+            "sp_t_hot": {
+              ".validate": "newData.isNumber() && newData.val() >= 50.0 && newData.val() <= 95.0"
+            },
+            "sp_fan": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+            },
+            "t_max": {
+              ".validate": "newData.isNumber() && newData.val() >= 37.5 && newData.val() <= 42.0"
+            },
+            "t_min": {
+              ".validate": "newData.isNumber() && newData.val() >= 20.0 && newData.val() <= 36.0"
+            },
+            "t_offset_1": {
+              ".validate": "newData.isNumber() && newData.val() >= -10.0 && newData.val() <= 10.0"
+            },
+            "r_cal_1": {
+              ".validate": "newData.isNumber() && newData.val() >= 80.0 && newData.val() <= 120.0"
+            },
+            "t_offset_2": {
+              ".validate": "newData.isNumber() && newData.val() >= -10.0 && newData.val() <= 10.0"
+            },
+            "r_cal_2": {
+              ".validate": "newData.isNumber() && newData.val() >= 80.0 && newData.val() <= 120.0"
+            },
+            "t_offset_3": {
+              ".validate": "newData.isNumber() && newData.val() >= -10.0 && newData.val() <= 10.0"
+            },
+            "r_cal_3": {
+              ".validate": "newData.isNumber() && newData.val() >= 80.0 && newData.val() <= 120.0"
+            },
+            "t_offset_4": {
+              ".validate": "newData.isNumber() && newData.val() >= -10.0 && newData.val() <= 10.0"
+            },
+            "r_cal_4": {
+              ".validate": "newData.isNumber() && newData.val() >= 80.0 && newData.val() <= 120.0"
+            },
+            "pid_kp": {
+              ".validate": "newData.isNumber() && newData.val() >= 0.1 && newData.val() <= 50.0"
+            },
+            "pid_ti": {
+              ".validate": "newData.isNumber() && newData.val() >= 0.0 && newData.val() <= 2000.0"
+            },
+            "pid_td": {
+              ".validate": "newData.isNumber() && newData.val() >= 0.0 && newData.val() <= 500.0"
+            }
+          },
+          "tcp": {
+            "server_ip": {
+              ".validate": "newData.isString() && newData.val().length <= 64"
+            },
+            "server_port": {
+              ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 65535"
+            }
+          },
+          "wifi": {
+            "ssid": {
+              ".validate": "newData.isString() && newData.val().length <= 64"
+            },
+            "pass": {
+              ".validate": "newData.isString() && newData.val().length <= 64"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+

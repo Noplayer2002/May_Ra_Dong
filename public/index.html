@@ -73,62 +73,196 @@
                 <div class="info-item"><span class="info-label">Mã lỗi bo mạch (ERR):</span><span class="info-value" id="lpc-err">0x0000</span></div>
                 <div class="info-item"><span class="info-label">Địa chỉ IP:</span><span class="info-value" id="ip-address">N/A</span></div>
                 <div class="info-item"><span class="info-label">Địa chỉ MAC:</span><span class="info-value" id="mac-address">N/A</span></div>
-                <div class="info-item"><span class="info-label">Pin dự phòng:</span><span class="info-value" id="battery-level">N/A</span></div>
             </div>
 
             <!-- TAB 4: CẤU HÌNH NHIỆT ĐỘ & PID -->
             <div id="plasma" class="tab-content">
                 <form id="plasma-form">
-                    <div class="section-title">Cài Đặt Nhiệt Độ Chung</div>
-                    <div class="row"><div class="label">Set Point T_operator (37°C)</div><input type="number" step="any" id="sp_t_operator" required></div>
-                    <div class="row"><div class="label">Set Point T_hot (70~90°C)</div><input type="number" step="any" id="sp_t_hot" required></div>
-                    <div class="row"><div class="label">Set Point Quạt (Fan)</div><input type="number" step="any" id="sp_fan" required></div>
-                    <div class="row"><div class="label">Nhiệt độ Max</div><input type="number" step="any" id="t_max" required></div>
-                    <div class="row"><div class="label">Nhiệt độ Min</div><input type="number" step="any" id="t_min" required></div>
+                    <div class="section-title">Cài Đặt Nhiệt Độ Chung (Ngưỡng An Toàn)</div>
+                    <div class="row">
+                        <div class="label">Set Point T_operator (35.0 ~ 37.5°C, Chuẩn: 37°C)</div>
+                        <input type="number" step="0.1" min="35.0" max="37.5" id="sp_t_operator" required placeholder="37.0">
+                    </div>
+                    <div class="row">
+                        <div class="label">Set Point T_hot (50.0 ~ 95.0°C)</div>
+                        <input type="number" step="0.5" min="50.0" max="95.0" id="sp_t_hot" required placeholder="75.0">
+                    </div>
+                    <div class="row">
+                        <div class="label">Set Point Quạt (0 ~ 100)</div>
+                        <input type="number" step="1" min="0" max="100" id="sp_fan" required placeholder="100">
+                    </div>
+                    <div class="row">
+                        <div class="label">Nhiệt độ Max (37.5 ~ 42.0°C, ngắt quá nhiệt)</div>
+                        <input type="number" step="0.1" min="37.5" max="42.0" id="t_max" required placeholder="38.5">
+                    </div>
+                    <div class="row">
+                        <div class="label">Nhiệt độ Min (20.0 ~ 36.0°C, báo động thấp)</div>
+                        <input type="number" step="0.1" min="20.0" max="36.0" id="t_min" required placeholder="30.0">
+                    </div>
 
                     <div class="section-title">Hiệu Chuẩn Cảm Biến T1 & T2</div>
-                    <div class="row"><div class="label">Offset T1</div><input type="number" step="any" id="t_offset_1" required></div>
-                    <div class="row"><div class="label">R_cal T1</div><input type="number" step="any" id="r_cal_1" required></div>
-                    <div class="row"><div class="label">Offset T2</div><input type="number" step="any" id="t_offset_2" required></div>
-                    <div class="row"><div class="label">R_cal T2</div><input type="number" step="any" id="r_cal_2" required></div>
+                    <div class="row">
+                        <div class="label">Offset T1 (-10.0 ~ 10.0°C)</div>
+                        <input type="number" step="0.01" min="-10.0" max="10.0" id="t_offset_1" required placeholder="0.0">
+                    </div>
+                    <div class="row">
+                        <div class="label">R_cal T1 (80.0 ~ 120.0 Ω)</div>
+                        <input type="number" step="0.01" min="80.0" max="120.0" id="r_cal_1" required placeholder="100.0">
+                    </div>
+                    <div class="row">
+                        <div class="label">Offset T2 (-10.0 ~ 10.0°C)</div>
+                        <input type="number" step="0.01" min="-10.0" max="10.0" id="t_offset_2" required placeholder="0.0">
+                    </div>
+                    <div class="row">
+                        <div class="label">R_cal T2 (80.0 ~ 120.0 Ω)</div>
+                        <input type="number" step="0.01" min="80.0" max="120.0" id="r_cal_2" required placeholder="100.0">
+                    </div>
 
                     <div class="section-title">Hiệu Chuẩn Cảm Biến T3 & T4</div>
-                    <div class="row"><div class="label">Offset T3</div><input type="number" step="any" id="t_offset_3" required></div>
-                    <div class="row"><div class="label">R_cal T3</div><input type="number" step="any" id="r_cal_3" required></div>
-                    <div class="row"><div class="label">Offset T4</div><input type="number" step="any" id="t_offset_4" required></div>
-                    <div class="row"><div class="label">R_cal T4</div><input type="number" step="any" id="r_cal_4" required></div>
+                    <div class="row">
+                        <div class="label">Offset T3 (-10.0 ~ 10.0°C)</div>
+                        <input type="number" step="0.01" min="-10.0" max="10.0" id="t_offset_3" required placeholder="0.0">
+                    </div>
+                    <div class="row">
+                        <div class="label">R_cal T3 (80.0 ~ 120.0 Ω)</div>
+                        <input type="number" step="0.01" min="80.0" max="120.0" id="r_cal_3" required placeholder="100.0">
+                    </div>
+                    <div class="row">
+                        <div class="label">Offset T4 (-10.0 ~ 10.0°C)</div>
+                        <input type="number" step="0.01" min="-10.0" max="10.0" id="t_offset_4" required placeholder="0.0">
+                    </div>
+                    <div class="row">
+                        <div class="label">R_cal T4 (80.0 ~ 120.0 Ω)</div>
+                        <input type="number" step="0.01" min="80.0" max="120.0" id="r_cal_4" required placeholder="100.0">
+                    </div>
 
                     <div class="section-title">Hệ Số Điều Khiển PID</div>
-                    <div class="row"><div class="label">Kp (Hệ số tỷ lệ)</div><input type="number" step="any" id="pid_kp" required></div>
-                    <div class="row"><div class="label">Ti (Thời gian tích phân)</div><input type="number" step="any" id="pid_ti" required></div>
-                    <div class="row"><div class="label">Td (Thời gian vi phân)</div><input type="number" step="any" id="pid_td" required></div>
+                    <div class="row">
+                        <div class="label">Kp (Hệ số tỷ lệ: 0.1 ~ 50.0)</div>
+                        <input type="number" step="0.01" min="0.1" max="50.0" id="pid_kp" required placeholder="2.5">
+                    </div>
+                    <div class="row">
+                        <div class="label">Ti (Thời gian tích phân: 0.0 ~ 2000.0 s)</div>
+                        <input type="number" step="0.1" min="0.0" max="2000.0" id="pid_ti" required placeholder="180.0">
+                    </div>
+                    <div class="row">
+                        <div class="label">Td (Thời gian vi phân: 0.0 ~ 500.0 s)</div>
+                        <input type="number" step="0.1" min="0.0" max="500.0" id="pid_td" required placeholder="25.0">
+                    </div>
 
                     <button type="submit" class="btn btn-orange" style="margin-top: 15px;">Lưu Cấu Hình Plasma</button>
                 </form>
             </div>
-            <!-- TAB 5: BẢNG GOOGLE SHEETS DASHBOARD -->
+            <!-- TAB 5: NHẬT KÝ BẢN GHI (HL7) -->
             <div id="records" class="tab-content">
-                <div class="sheet-dashboard-card">
-                    <div class="sheet-dashboard-header">
-                        <div class="sheet-status-pill">
-                            <span class="pulse-led"></span>
-                            <span>Đồng Bộ Google Sheets Trực Tiếp</span>
+                <div class="hl7-split-layout">
+                    <!-- KHUNG TRÁI: CHI TIẾT MẺ RÃ ĐÔNG -->
+                    <div class="hl7-dashboard-card hl7-detail-card">
+                        <!-- HEADER COMPACT -->
+                        <div class="hl7-dashboard-header">
+                            <div class="hl7-header-left">
+                                <span class="hl7-title" id="hl7-card-title">Chi Tiết Chu Trình Rã Đông</span>
+                                <span id="hl7-timestamp-badge" class="badge-blue">Chưa có bản ghi</span>
+                            </div>
+                            <span id="hl7-source-tag" class="source-tag">Bản ghi mới nhất</span>
                         </div>
-                        <div style="display: flex; gap: 8px;">
-                            <button type="button" class="btn-secondary" id="btn-refresh-sheet">Tải lại dữ liệu</button>
-                            <a href="https://docs.google.com/spreadsheets/d/1jaLfUghym0DGokRXKbHBB35qx9IXLwIW4DnyRnJkThg/edit?gid=0#gid=0" 
-                               target="_blank" 
-                               class="btn-secondary" 
-                               style="background: #0284c7; color: #fff; border-color: #0284c7;">
-                                Xem trên Google Sheets
-                            </a>
+
+                        <div class="hl7-dashboard-body">
+                            <!-- THANH METADATA 1 DÒNG GỌN GÀNG -->
+                            <div class="hl7-meta-bar">
+                                <div class="meta-item"><span class="meta-label">Mã mẻ:</span> <strong id="hl7-batch-id" class="val-highlight">--</strong></div>
+                                <div class="meta-item"><span class="meta-label">Msg ID:</span> <span id="hl7-msg-id" class="val-mono">--</span></div>
+                                <div class="meta-item"><span class="meta-label">Thiết bị:</span> <span id="hl7-sender" class="val-bold">--</span></div>
+                                <div class="meta-item"><span class="meta-label">Thời gian:</span> <span id="hl7-timestamp" class="val-bold">--</span></div>
+                            </div>
+
+                            <!-- 2 CỘT SONG SONG: ZONE A (Slot 1-8) | ZONE B (Slot 9-16) -->
+                            <div class="hl7-dual-zones">
+                                <!-- CỘT ZONE A -->
+                                <div class="zone-column zone-a-col">
+                                    <div class="zone-header zone-a-head">
+                                        <div class="zone-head-left">
+                                            <span class="zone-name zone-a-name">❄️ ZONE A (Slot 01 - 08)</span>
+                                            <span id="zone-a-status" class="zone-pill zone-a-pill">Chờ</span>
+                                        </div>
+                                        <div class="zone-temp-group">
+                                            <span class="zone-temp-lbl">Nhiệt độ:</span>
+                                            <span id="zone-a-temp" class="zone-temp-number zone-a-temp-num">--.- °C</span>
+                                        </div>
+                                    </div>
+                                    <div class="zone-table-container">
+                                        <table class="zone-compact-table">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width: 48px; text-align: center;">Vị trí</th>
+                                                    <th>Mã Barcode Túi Huyết Tương</th>
+                                                    <th style="width: 75px; text-align: center;">Trạng thái</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="hl7-zone-a-slots-body">
+                                                <tr><td colspan="3" class="table-empty-cell">Chưa có dữ liệu</td></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- CỘT ZONE B -->
+                                <div class="zone-column zone-b-col">
+                                    <div class="zone-header zone-b-head">
+                                        <div class="zone-head-left">
+                                            <span class="zone-name zone-b-name">❄️ ZONE B (Slot 09 - 16)</span>
+                                            <span id="zone-b-status" class="zone-pill zone-b-pill">Chờ</span>
+                                        </div>
+                                        <div class="zone-temp-group">
+                                            <span class="zone-temp-lbl">Nhiệt độ:</span>
+                                            <span id="zone-b-temp" class="zone-temp-number zone-b-temp-num">--.- °C</span>
+                                        </div>
+                                    </div>
+                                    <div class="zone-table-container">
+                                        <table class="zone-compact-table">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width: 48px; text-align: center;">Vị trí</th>
+                                                    <th>Mã Barcode Túi Huyết Tương</th>
+                                                    <th style="width: 75px; text-align: center;">Trạng thái</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="hl7-zone-b-slots-body">
+                                                <tr><td colspan="3" class="table-empty-cell">Chưa có dữ liệu</td></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- XEM RAW HL7 MESSAGE -->
+                            <details class="hl7-raw-details">
+                                <summary>Xem chuỗi bản tin HL7 thô (Raw Message)</summary>
+                                <pre id="hl7-raw-content">Chưa có dữ liệu bản tin.</pre>
+                            </details>
                         </div>
                     </div>
-                    <div class="sheet-iframe-container">
-                        <iframe 
-                            id="google-sheet-iframe"
-                            src=https://docs.google.com/spreadsheets/d/e/2PACX-1vSGtp8an07e0BXBKNDtq1uOl-8xcD04pkPqmUP7unrC_89SdNQYGkLQaAAked-A5MGWbOf3sZc1Ugtg/pubhtml>
-                        </iframe>    
+
+                    <!-- KHUNG PHẢI: LỊCH SỬ CÁC MẺ RÃ ĐÔNG (TỪ GOOGLE SHEETS) -->
+                    <div class="hl7-dashboard-card hl7-history-card">
+                        <div class="hl7-dashboard-header">
+                            <span class="hl7-title">📜 Lịch Sử Các Mẻ</span>
+                            <div style="display: flex; gap: 6px; align-items: center;">
+                                <button type="button" class="btn-icon" id="btn-refresh-history" title="Tải lại từ Google Sheets">🔄 Tải lại</button>
+                                <a href="https://docs.google.com/spreadsheets/d/1jaLfUghym0DGokRXKbHBB35qx9IXLwIW4DnyRnJkThg/edit?gid=0#gid=0" 
+                                   target="_blank" 
+                                   class="btn-icon" 
+                                   title="Mở file Google Sheets">↗️ Xem Sheet</a>
+                            </div>
+                        </div>
+                        <div class="hl7-history-body">
+                            <div class="history-search-box">
+                                <input type="text" id="history-search-input" placeholder="🔍 Tìm mã mẻ (Batch ID)...">
+                            </div>
+                            <div id="hl7-history-list" class="hl7-history-list">
+                                <div class="history-loading">Đang tải lịch sử từ Google Sheets...</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
