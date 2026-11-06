@@ -5,6 +5,10 @@
         ".read": true,
         ".write": true
       },
+      "history": {
+        ".read": true,
+        ".write": true
+      },
       "devices": {
         ".read": true,
         "$deviceId": {

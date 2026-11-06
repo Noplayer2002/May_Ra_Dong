@@ -113,16 +113,6 @@ function selectDevice(id) {
     // Hiển thị bản ghi HL7 gần nhất nếu có
     if (AppState.lastHL7[id]) {
         UIRenderer.displayHL7Detail(AppState.lastHL7[id].rawHL7, AppState.lastHL7[id].recordKey);
-    } else if (device?.history) {
-        const historyKeys = Object.keys(device.history);
-        if (historyKeys.length > 0) {
-            const latestKey = historyKeys[historyKeys.length - 1];
-            const raw = device.history[latestKey]?.raw_hl7;
-            if (raw) {
-                AppState.lastHL7[id] = { rawHL7: raw, recordKey: latestKey };
-                UIRenderer.displayHL7Detail(raw, latestKey);
-            }
-        }
     }
 
     if (device && device.wifi_list) {
@@ -137,32 +127,9 @@ function selectDevice(id) {
 
 // KHỞI CHẠY KHI TRANG SẴN SÀNG
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. LẮNG NGHE DỮ LIỆU THỜI GIAN THỰC TỪ FIREBASE
+    // 1. LẮNG NGHE DỮ LIỆU CẤU HÌNH & TRẠNG THÁI THIẾT BỊ TỪ FIREBASE
     DeviceService.subscribeDevices((data) => {
         AppState.devices = data;
-
-        // Tự động bắt bản tin HL7 đẩy lên Google Sheets và hiển thị lên giao diện
-        Object.keys(data).forEach(deviceId => {
-            const history = data[deviceId]?.history;
-            if (history) {
-                Object.keys(history).forEach(recordKey => {
-                    const rawHL7 = history[recordKey]?.raw_hl7;
-                    if (rawHL7) {
-                        AppState.lastHL7[deviceId] = { rawHL7, recordKey };
-                        if (deviceId === AppState.selectedDeviceId) {
-                            UIRenderer.displayHL7Detail(rawHL7, recordKey, 'Bản ghi mới nhất (Realtime)');
-                        }
-
-                        console.log(`Bắt được bản ghi [${recordKey}] từ máy [${deviceId}], đang gửi lên Google Sheets...`);
-                        
-                        DeviceService.processAndForwardHL7(deviceId, recordKey, rawHL7).then(() => {
-                            console.log(`Chu trình hoàn tất: Đã đẩy lên Sheet & Đã tự động xóa [${recordKey}] trên Firebase.`);
-                            loadSheetHistory();
-                        });
-                    }
-                });
-            }
-        });
 
         // Cập nhật danh sách máy nếu đang ở trang chọn thiết bị
         if (document.getElementById('device-selection-page').classList.contains('active')) {
@@ -181,6 +148,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
         }
+    });
+
+    // 2. LẮNG NGHE HÀNG ĐỢI MẺ RÃ ĐÔNG ĐỘC LẬP TỪ /esp32/history
+    DeviceService.subscribeHistory((historyData) => {
+        if (!historyData) return;
+        Object.keys(historyData).forEach(deviceId => {
+            const deviceHistory = historyData[deviceId];
+            if (deviceHistory) {
+                Object.keys(deviceHistory).forEach(recordKey => {
+                    const rawHL7 = deviceHistory[recordKey]?.raw_hl7;
+                    if (rawHL7) {
+                        AppState.lastHL7[deviceId] = { rawHL7, recordKey };
+                        if (deviceId === AppState.selectedDeviceId) {
+                            UIRenderer.displayHL7Detail(rawHL7, recordKey, 'Bản ghi mới nhất (Realtime)');
+                        }
+
+                        console.log(`Bắt được bản ghi [${recordKey}] từ máy [${deviceId}], đang gửi lên Google Sheets...`);
+                        
+                        DeviceService.processAndForwardHL7(deviceId, recordKey, rawHL7).then(() => {
+                            console.log(`Chu trình hoàn tất: Đã đẩy lên Sheet & Đã tự động xóa [${recordKey}] trên Firebase.`);
+                            loadSheetHistory();
+                        });
+                    }
+                });
+            }
+        });
     });
 
     // 2. TÌM KIẾM THIẾT BỊ

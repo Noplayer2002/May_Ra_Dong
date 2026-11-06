@@ -9,6 +9,10 @@ export const DeviceService = {
         return db.ref('esp32/devices').on('value', snap => callback(snap.val() || {}));
     },
 
+    subscribeHistory(callback) {
+        return db.ref('esp32/history').on('value', snap => callback(snap.val() || {}));
+    },
+
     async triggerScanWifi(deviceId) {
         if (!deviceId) return;
 
@@ -127,13 +131,13 @@ export const DeviceService = {
 
 
         // Xóa bản ghi trong hàng đợi history trên Firebase để tránh gửi lặp lại
-        await db.ref(`esp32/devices/${deviceId}/history/${recordKey}`).remove();
+        await db.ref(`esp32/history/${deviceId}/${recordKey}`).remove();
 
         return true;
     },
 
     clearAllHistory(deviceId) {
-        return db.ref(`esp32/devices/${deviceId}/history`).remove();
+        return db.ref(`esp32/history/${deviceId}`).remove();
     },
 
     async fetchHistoryFromSheet() {
